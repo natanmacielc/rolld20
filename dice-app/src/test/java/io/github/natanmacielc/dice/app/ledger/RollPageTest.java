@@ -97,6 +97,7 @@ class RollPageTest {
                 .body(containsString("<meta name=\"twitter:image\" content=\"" + BASE + "/og/" + rollId + ".png\">"))
                 .body(containsString("<link rel=\"canonical\" href=\"" + BASE + "/r/" + rollId + "\">"))
                 .body(containsString("<link rel=\"icon\" href=\"/favicon.svg?v=2\" type=\"image/svg+xml\">"))
+                .body(containsString("<link rel=\"manifest\" href=\"/manifest.json\">"))
                 .body(containsString("<meta property=\"og:title\" content=\"2d6+3 = " + total + " · dados "))
                 .body(containsString("data-status=\"RESOLVED\""));
     }
