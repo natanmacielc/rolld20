@@ -46,7 +46,7 @@ public record RollD20Config(String account, Optional<String> hostedZoneId, Strin
 
     /**
      * Claim sub do token do GitHub para o environment. O repositório usa o formato imutável
-     * (repo:dono@id/nome@id), que não muda quando o repositório é renomeado.
+     * (repo:dono@id/nome@id), que inclui o nome: renomear o repositório muda o sub (aconteceu de dice para rolld20).
      */
     String githubSubject() {
         return githubSubjectPrefix + ":environment:" + githubEnvironment;

@@ -26,8 +26,8 @@ Contexto (em `cdk.json` ou `-c chave=valor`):
 |---|---|---|
 | `hostedZoneId` | — | obrigatório para Cert/Dev; sem ele só a stack do OIDC é sintetizada |
 | `zoneName` / `domainName` | `nimbos.solutions` / `dice.nimbos.solutions` | |
-| `githubRepo` / `githubEnvironment` | `natanmacielc/dice` / `dev` | quem pode assumir a role de deploy |
-| `githubSubjectPrefix` | `repo:natanmacielc@85594492/dice@1419905727` | início do claim `sub` do token do GitHub; o repositório usa o formato imutável (confira com `gh api repos/natanmacielc/dice/actions/oidc/customization/sub`, campo `sub_claim_prefix`) |
+| `githubRepo` / `githubEnvironment` | `natanmacielc/rolld20` / `dev` | quem pode assumir a role de deploy |
+| `githubSubjectPrefix` | `repo:natanmacielc@85594492/rolld20@1419905727` | início do claim `sub` do token do GitHub; o repositório usa o formato imutável (confira com `gh api repos/natanmacielc/rolld20/actions/oidc/customization/sub`, campo `sub_claim_prefix`) |
 | `existingOidcProviderArn` | — | se a conta já tem o provider OIDC do GitHub |
 | `reservedConcurrency` | — | contas novas (limite 10) não podem reservar |
 | `alertEmail` | — | e-mail dos alertas (SNS do kill switch e AWS Budgets); no deploy vem da variável `ALERT_EMAIL` |

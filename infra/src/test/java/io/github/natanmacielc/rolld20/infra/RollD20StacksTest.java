@@ -36,8 +36,8 @@ class RollD20StacksTest {
                 "hostedZoneId", "Z000EXAMPLE",
                 "zoneName", "nimbos.solutions",
                 "domainName", "dice.nimbos.solutions",
-                "githubRepo", "natanmacielc/dice",
-                "githubSubjectPrefix", "repo:natanmacielc@85594492/dice@1419905727",
+                "githubRepo", "natanmacielc/rolld20",
+                "githubSubjectPrefix", "repo:natanmacielc@85594492/rolld20@1419905727",
                 "githubEnvironment", "dev",
                 "functionZip", functionZip.toString(),
                 "webDir", webDir.toString()));
@@ -454,7 +454,7 @@ class RollD20StacksTest {
                         "Condition", Map.of("StringEquals", Map.of(
                                 "token.actions.githubusercontent.com:aud", "sts.amazonaws.com",
                                 "token.actions.githubusercontent.com:sub",
-                                "repo:natanmacielc@85594492/dice@1419905727:environment:dev")),
+                                "repo:natanmacielc@85594492/rolld20@1419905727:environment:dev")),
                         "Principal", Map.of("Federated", Match.anyValue()))), "Version", "2012-10-17")));
     }
 
