@@ -10,6 +10,8 @@ const TOWARD_CAMERA = [0, 0, 1];
  * mas as vizinhas aparecem e o dado ganha volume (de frente ele pareceria um polígono chato).
  */
 export const REST_TILT = qmul(qaxis([1, 0, 0], 0.25), qaxis([0, 1, 0], -0.17));
+/** O d4 de frente seria um triângulo chato: inclina mais para uma face vizinha aparecer. */
+const REST_TILT_D4 = qmul(qaxis([1, 0, 0], 0.55), qaxis([0, 1, 0], -0.3));
 
 /** A face que mostra `value`: no d100, uma das dez faces do d10 (o número é pintado por cima). */
 export function restingFace(sides, value) {
@@ -22,7 +24,7 @@ export function restingFace(sides, value) {
  * Orientação em que a face de `value` olha para a câmera, de pé, com `twist` radianos de giro
  * em torno do eixo da câmera e a inclinação de repouso.
  */
-export function restingPose(sides, value, twist = 0, tilt = REST_TILT) {
+export function restingPose(sides, value, twist = 0, tilt = sides === 4 ? REST_TILT_D4 : REST_TILT) {
   const body = solid(sides);
   const face = body.faces[restingFace(sides, value)];
   const toCamera = qfromTo(face.normal, TOWARD_CAMERA);

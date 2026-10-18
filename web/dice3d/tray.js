@@ -85,8 +85,13 @@ class DieState {
 }
 
 export class Tray {
-  constructor(container, sides = 20, count = 1) {
+  /**
+   * pad: margem do canvas (fração de cada lado) fora da área dos dados, para a queda, a sombra e
+   * as faíscas não serem cortadas na borda.
+   */
+  constructor(container, sides = 20, count = 1, { pad = 0.12 } = {}) {
     this.container = container;
+    this.pad = pad;
     this.sides = sides;
     this.dice = [];
     this.leaving = [];
@@ -167,7 +172,14 @@ export class Tray {
     }
     this.running = true;
     this.last = clock();
+    let odd = false;
     const frame = (now) => {
+      // Só a respiração do dado parado: metade dos quadros basta e poupa bateria.
+      odd = !odd;
+      if (this.calm && odd) {
+        requestAnimationFrame(frame);
+        return;
+      }
       const active = this.step(now);
       if (active && this.live) requestAnimationFrame(frame);
       else this.running = false;
@@ -176,16 +188,18 @@ export class Tray {
   }
 
   relayout(animate = true) {
-    const { radius, positions } = layout(this.dice.length, this.width, this.height);
+    const px = this.width * this.pad;
+    const py = this.height * this.pad;
+    const { radius, positions } = layout(this.dice.length, this.width - 2 * px, this.height - 2 * py);
     this.dice.forEach((die, i) => {
       const p = positions[i];
-      die.tx = p.x;
-      die.ty = p.y;
+      die.tx = p.x + px;
+      die.ty = p.y + py;
       die.twist = p.twist;
       die.rGoal = radius;
       if (!animate || !die.r) {
-        die.x = p.x;
-        die.y = p.y;
+        die.x = die.tx;
+        die.y = die.ty;
         die.r = radius;
       }
     });
@@ -355,7 +369,10 @@ export class Tray {
     this.tilt = this.tilt.map((v, i) => approach(v, this.tiltGoal[i], dt, 6));
     if (Math.abs(this.light[0] - lightGoal[0]) + Math.abs(this.light[1] - lightGoal[1]) > 0.002) active = true;
 
+    const lightMoving = active;
     for (const die of this.dice) active = this.update(die, now, dt, motion) || active;
+    this.calm = !lightMoving && !this.leaving.length && !this.sparks.length
+      && this.dice.every((die) => die.mode === 'idle' && Math.abs(die.scale - 1) < 0.01);
     this.leaving = this.leaving.filter((die) => {
       const p = clamp((now - die.t0) / LEAVE_MS);
       die.scale = (die.scaleFrom ?? 1) * (1 - easeOutCubic(p));

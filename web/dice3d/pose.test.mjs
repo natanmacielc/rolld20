@@ -10,6 +10,7 @@ const valuesOf = (sides) => Array.from({ length: sides === 100 ? 100 : sides }, 
 
 for (const sides of DIE_SIDES) {
   test(`d${sides}: em repouso, a face do valor é a mais virada para a câmera, de pé`, () => {
+    // O d4 inclina mais (senão seria um triângulo chato), então a folga dele é maior.
     const body = solid(sides);
     for (const twist of [-0.25, 0, 0.25]) {
       for (const value of valuesOf(sides)) {
@@ -17,8 +18,8 @@ for (const sides of DIE_SIDES) {
         const front = restingFace(sides, value);
         const z = body.faces.map((f) => qrot(q, f.normal)[2]);
         assert.equal(z.indexOf(Math.max(...z)), front, `d${sides}=${value}`);
-        assert.ok(z[front] > 0.9);
-        assert.ok(qrot(q, body.faces[front].up)[1] > 0.85, 'número de pé');
+        assert.ok(z[front] > (sides === 4 ? 0.75 : 0.9));
+        assert.ok(qrot(q, body.faces[front].up)[1] > (sides === 4 ? 0.75 : 0.85), 'número de pé');
       }
     }
   });

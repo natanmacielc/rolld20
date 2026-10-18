@@ -9,10 +9,11 @@ import { fingerprint } from './verifier/chain-v2.js';
 import { adoptIdentity, identity, linkDevice, nameProblem, saveName, signRequest, storedName } from './identity.js';
 import { acceptIdentity, answerDevice, deviceMac, newSecret, pairingUrl, parsePairingFragment } from './pairing.js';
 import {
-  $, DIE_COLORS, DIE_SIDES, Tray, celebrate, closeDialog, copyText, countUp, dieIcon, h, lineIcon, openDialog, qrSvg,
-  replay, ring,
+  $, DIE_COLORS, DIE_SIDES, Tray, calmStage, celebrate, closeDialog, copyText, countUp, diceChips, dieIcon, h, lineIcon,
+  openDialog, qrSvg, replay, ring,
   runTableCheck, runVerificationBadge, setupDialogs, shareLink, sleep, toast,
 } from './ui.js';
+import { setupShell } from './shell.js';
 
 const SESSION_KEY = 'dice.sessionId';
 const SESSION_NAME_KEY = 'dice.sessionName';
@@ -466,6 +467,7 @@ function expression() {
 
 function renderChoice() {
   document.documentElement.style.setProperty('--c', DIE_COLORS[state.sides]);
+  $('picker').style.setProperty('--pick', String(DIE_SIDES.indexOf(state.sides)));
   for (const button of $('picker').children) {
     const on = Number(button.dataset.sides) === state.sides;
     button.setAttribute('aria-checked', String(on));
@@ -483,7 +485,7 @@ function renderChoice() {
 function resetStage() {
   if (state.rolling) return;
   $('result').hidden = true;
-  $('banner').hidden = true;
+  calmStage($('stage'), $('banner'));
   $('roll-error').textContent = '';
   $('status-line').textContent = 'Escolha o dado e role';
   stageRing.mode('idle');
@@ -625,11 +627,11 @@ async function reveal(roll) {
   $('status-line').textContent = 'O drand falou!';
   await tray.land(dice);
 
-  celebrate($('stage'), $('banner'), criticalOf(roll.expression, dice));
+  celebrate($('stage'), $('banner'), criticalOf(roll.expression, dice), tray);
   $('result').hidden = false;
   replay($('result'), 'is-in');
   countUp($('total'), total, Math.min(900, 300 + total * 8));
-  $('breakdown').textContent = formatBreakdown(dice, modifier);
+  diceChips($('breakdown'), { dice, modifier, sides: parseExpression(roll.expression).sides, text: formatBreakdown(dice, modifier) });
   $('status-line').textContent = `${roll.expression} · round #${round} do drand`;
   state.rollId = roll.rollId;
   runVerificationBadge($('verify-badge'), $('verify-dialog'), roll.rollId, verifyRoll);
@@ -642,6 +644,10 @@ async function roll() {
     expr = expression();
   } catch (e) {
     $('roll-error').textContent = e.message;
+    return;
+  }
+  if (navigator.onLine === false) {
+    $('roll-error').textContent = 'Sem conexão: o pedido precisa chegar ao servidor antes do drand sortear.';
     return;
   }
   if (!playerName) {
@@ -821,6 +827,7 @@ $('verify-table').addEventListener('click', async () => {
 // ---------- Início ----------
 
 setupDialogs();
+setupShell();
 renderPlayer();
 joinFromLink();
 newSeed();

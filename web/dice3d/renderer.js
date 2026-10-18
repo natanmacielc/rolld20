@@ -202,7 +202,7 @@ export function drawDie(ctx, subject, { light = DEFAULT_LIGHT, dpr = 1 } = {}) {
       const extent = Math.max(...inner.map((p) => Math.hypot(p[0] - c[0], p[1] - c[1]))) || 1;
       const g = ctx.createLinearGradient(c[0] + ls[0] * extent, c[1] + ls[1] * extent, c[0] - ls[0] * extent, c[1] - ls[1] * extent);
       g.addColorStop(0, toCss(add(multiply(base, 1.22), multiply(mat.glow, 0.05))));
-      g.addColorStop(1, toCss(multiply(base, 0.74)));
+      g.addColorStop(1, toCss(multiply(base, 0.62)));
       polygon(ctx, inner);
       ctx.fillStyle = g;
       ctx.fill();

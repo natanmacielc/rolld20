@@ -328,6 +328,26 @@ export function celebrate(stage, banner, crit, tray) {
   replay(banner, 'is-in');
 }
 
+/**
+ * Fichas dos dados sob o total (máximo em ouro, 1 em vermelho) e o bônus. `text` é a mesma conta
+ * por extenso, para leitor de tela. Um dado só sem bônus não tem fichas: o total já diz tudo.
+ */
+export function diceChips(el, { dice, modifier = 0, sides, text }) {
+  if (!text) {
+    el.replaceChildren();
+    el.removeAttribute('aria-label');
+    return;
+  }
+  const max = sides === 100 ? 100 : sides;
+  const chips = dice.map((d, i) => {
+    const chip = h('span', { class: `die-chip${d === max ? ' is-max' : d === 1 ? ' is-min' : ''}`, 'aria-hidden': 'true', text: String(d) });
+    chip.style.setProperty('--i', String(Math.min(i, 12)));
+    return chip;
+  });
+  const mod = modifier ? [h('span', { class: 'mod-chip', 'aria-hidden': 'true', text: `${modifier > 0 ? '+' : '−'} ${Math.abs(modifier)}` })] : [];
+  el.replaceChildren(...chips, ...mod, h('span', { class: 'visually-hidden', text }));
+}
+
 /** Tira o brilho do resultado anterior do tablado. */
 export function calmStage(stage, banner) {
   stage.classList.remove('is-crit', 'is-fumble', 'is-landed');

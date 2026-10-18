@@ -42,8 +42,8 @@ export function material(sides) {
     body: mix(multiply(color, 0.78), [0.01, 0.006, 0.03], 0.18),
     glow: color,
     ink: [1, 0.9, 0.66],
-    shininess: 56,
-    specular: 0.85,
+    shininess: 44,
+    specular: 0.95,
   };
 }
 
@@ -53,12 +53,12 @@ export function material(sides) {
  */
 export function shade(n, mat, light = DEFAULT_LIGHT) {
   const diffuse = Math.max(0, dot(n, light));
-  const sky = 0.16 + 0.1 * (n[1] * 0.5 + 0.5);
-  let rgb = multiply(mat.body, sky + 1.05 * diffuse);
+  const sky = 0.09 + 0.08 * (n[1] * 0.5 + 0.5);
+  let rgb = multiply(mat.body, sky + 1.2 * diffuse);
   rgb = add(rgb, multiply(WARM, 0.07 * diffuse * diffuse));
   rgb = add(rgb, multiply(COOL, 0.035 * (1 - diffuse)));
   const facing = Math.max(0, dot(n, VIEW));
-  rgb = add(rgb, multiply(RIM, 0.22 * (1 - facing) ** 3 * (1 - diffuse)));
+  rgb = add(rgb, multiply(RIM, 0.13 * (1 - facing) ** 3 * (1 - diffuse)));
   const half = normalize(add(light, VIEW));
   const spec = mat.specular * Math.max(0, dot(n, half)) ** mat.shininess;
   return add(rgb, [spec, spec, spec]);
