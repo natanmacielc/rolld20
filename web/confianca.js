@@ -3,12 +3,17 @@ import { fetchLog, verifyRoll } from './api.js';
 import { drandRoundUrl, explainRoll, formatBreakdown, historyFromLog, parseRollInput, shellQuote } from './page-logic.js';
 import { roll as computeRoll } from './verifier/dice-v1.js';
 import { playerMessage } from './verifier/chain-v2.js';
-import { $, DIE_COLORS, copyButton, dieIcon, h, renderChecks } from './ui.js';
+import { $, DIE_COLORS, Tray, copyButton, dieIcon, h, renderChecks } from './ui.js';
+import { setupShell } from './shell.js';
 
 const SESSION_KEY = 'dice.sessionId';
 const REPO = 'https://github.com/natanmacielc/dice';
 
-// ---------- Entrada animada das seções ----------
+// ---------- Herói e entrada animada das seções ----------
+
+// Um d20 vivo no herói: respira e acompanha o ponteiro com a luz. Parado, mostra só o "20".
+new Tray($('hero-tray'), 20, 1, { pad: 0.16 });
+setupShell();
 
 const observer = 'IntersectionObserver' in globalThis
   ? new IntersectionObserver((items) => {
