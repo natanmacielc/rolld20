@@ -1,6 +1,6 @@
 import json
 
-from dice_verify.__main__ import main
+from rolld20_verify.__main__ import main
 
 R = "b22aad4794f7451896f7a371aa46106fd84d919f3f569acd5b2fddf1d1440af3"
 SIG = "83ad29e4c409f9470fc2ef02f90214df49e02b441a1a241a82d622d9f608ef98fd8b11a029f1bee9d9e83b45088abe72"

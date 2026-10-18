@@ -32,7 +32,7 @@ public class GenerateIcons {
     static final Color MAGENTA = new Color(0xFF3D9A);
     static final Color VIOLET = new Color(0xA86BFF);
     static final Color BG = new Color(0x0A0616);
-    static final Path FONT = Path.of("dice-app/src/main/resources/fonts/Inter-Bold.ttf");
+    static final Path FONT = Path.of("rolld20-app/src/main/resources/fonts/Inter-Bold.ttf");
 
     // Vértices no viewBox 64x64: hexágono externo e o triângulo da face central.
     static final double[] T = {32, 3}, UR = {57.1, 17.5}, LR = {57.1, 46.5}, B = {32, 61}, LL = {6.9, 46.5},

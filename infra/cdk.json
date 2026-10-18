@@ -6,7 +6,7 @@
     "githubRepo": "natanmacielc/dice",
     "githubSubjectPrefix": "repo:natanmacielc@85594492/dice@1419905727",
     "githubEnvironment": "dev",
-    "functionZip": "../dice-app/target/function.zip",
+    "functionZip": "../rolld20-app/target/function.zip",
     "webDir": "../web",
     "@aws-cdk/core:checkSecretUsage": true,
     "@aws-cdk/core:defaultCrossStackReferences": "strong"

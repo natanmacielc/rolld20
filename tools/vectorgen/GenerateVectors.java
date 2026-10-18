@@ -1,18 +1,18 @@
-import io.github.natanmacielc.dice.core.BeaconCheck;
-import io.github.natanmacielc.dice.core.DiceException;
-import io.github.natanmacielc.dice.core.DiceRoller;
-import io.github.natanmacielc.dice.core.Rejection;
-import io.github.natanmacielc.dice.core.Quicknet;
-import io.github.natanmacielc.dice.core.RollResult;
-import io.github.natanmacielc.dice.core.chain.CanonicalJson;
-import io.github.natanmacielc.dice.core.chain.ChainEntry;
-import io.github.natanmacielc.dice.core.chain.ChainFormat;
-import io.github.natanmacielc.dice.core.chain.ChainVerification;
-import io.github.natanmacielc.dice.core.chain.ChainVerifier;
-import io.github.natanmacielc.dice.core.chain.EntryType;
-import io.github.natanmacielc.dice.core.chain.Payloads;
-import io.github.natanmacielc.dice.core.chain.Player;
-import io.github.natanmacielc.dice.core.chain.ProofVerifier;
+import io.github.natanmacielc.rolld20.core.BeaconCheck;
+import io.github.natanmacielc.rolld20.core.DiceException;
+import io.github.natanmacielc.rolld20.core.DiceRoller;
+import io.github.natanmacielc.rolld20.core.Rejection;
+import io.github.natanmacielc.rolld20.core.Quicknet;
+import io.github.natanmacielc.rolld20.core.RollResult;
+import io.github.natanmacielc.rolld20.core.chain.CanonicalJson;
+import io.github.natanmacielc.rolld20.core.chain.ChainEntry;
+import io.github.natanmacielc.rolld20.core.chain.ChainFormat;
+import io.github.natanmacielc.rolld20.core.chain.ChainVerification;
+import io.github.natanmacielc.rolld20.core.chain.ChainVerifier;
+import io.github.natanmacielc.rolld20.core.chain.EntryType;
+import io.github.natanmacielc.rolld20.core.chain.Payloads;
+import io.github.natanmacielc.rolld20.core.chain.Player;
+import io.github.natanmacielc.rolld20.core.chain.ProofVerifier;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -26,11 +26,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Gera spec/test-vectors.json a partir de entradas curadas, com as saídas calculadas pelo dice-core.
+ * Gera spec/test-vectors.json a partir de entradas curadas, com as saídas calculadas pelo rolld20-core.
  * O arquivo sai só em ASCII (não-ASCII vira \\uXXXX), para não depender da codificação de quem lê.
  *
- * Uso: ./mvnw -q -pl dice-core compile
- *      java -cp dice-core/target/classes tools/vectorgen/GenerateVectors.java spec/test-vectors.json
+ * Uso: ./mvnw -q -pl rolld20-core compile
+ *      java -cp rolld20-core/target/classes tools/vectorgen/GenerateVectors.java spec/test-vectors.json
  */
 public class GenerateVectors {
 
@@ -155,7 +155,7 @@ public class GenerateVectors {
         System.out.printf("beacon=%d roll=%d error=%d%n", beacon.size(), rolls.size(), errors.size());
     }
 
-    /** Vetores da chain-v1 (spec/ALGORITHM.md, seção 6). Cada saída esperada é conferida pelo dice-core. */
+    /** Vetores da chain-v1 (spec/ALGORITHM.md, seção 6). Cada saída esperada é conferida pelo rolld20-core. */
     static final class ChainVectors {
 
         static final String R1M1 = "9f45f439afd81e9846b3b4dc5e3e6051922c73c8459d18e9d507b52ddbd884ff";

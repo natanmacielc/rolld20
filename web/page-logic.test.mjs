@@ -2,9 +2,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  buildExpression, contentSha256, criticalOf, formatBreakdown, describeError, drandRoundUrl, explainRoll, formatModifier, generateSeed, historyFromLog,
-  historyLoadError, initialOf, mergeTables, playerColor, tableLabel, tablesCacheFresh, tablesPage, upsertTable,
-  parseRollInput, relativeTime, requestRoll, runChecks, secondsUntil, shellQuote, summarizeLog,
+  buildExpression, contentSha256, criticalOf, describeError, drandRoundUrl, explainRoll, formatBreakdown,
+  formatModifier, generateSeed, historyFromLog, historyLoadError, initialOf, mergeTables, migrateKeys,
+  parseRollInput, playerColor, relativeTime, requestRoll, runChecks, secondsUntil, shellQuote, summarizeLog,
+  tableLabel, tablesCacheFresh, tablesPage, upsertTable,
 } from './page-logic.js';
 import { timeOf, verifyProof } from './verifier/chain-v1.js';
 import { fingerprint, verifyProof as verifyProofV2 } from './verifier/chain-v2.js';
@@ -259,4 +260,24 @@ test('mesa salva que não existe mais: cria outra e repete o roll (regressão do
 
   const busy = Object.assign(new Error('Mesa ocupada. Tente de novo.'), { status: 409 });
   await assert.rejects(requestRoll({ sessionId: 'x', createTable, postRoll: async () => { throw busy; } }), /Mesa ocupada/);
+});
+
+test('migrateKeys: as chaves de antes do RollD20 passam para os nomes novos uma vez, sem sobrescrever', () => {
+  const data = new Map([['dice.sessionId', 'kq1t9m3x7c2a8z5r'], ['dice.playerName', 'Thorin'], ['dice.tables', '{"items":[]}'],
+    ['rolld20.tables', '{"items":[1]}'], ['outra', 'x']]);
+  const storage = {
+    getItem: (k) => (data.has(k) ? data.get(k) : null),
+    setItem: (k, v) => data.set(k, String(v)),
+    removeItem: (k) => data.delete(k),
+  };
+  migrateKeys(() => storage);
+  assert.equal(data.get('rolld20.sessionId'), 'kq1t9m3x7c2a8z5r');
+  assert.equal(data.get('rolld20.playerName'), 'Thorin');
+  assert.equal(data.get('rolld20.tables'), '{"items":[1]}', 'o valor novo vence');
+  assert.equal(data.has('rolld20.sessionName'), false);
+  assert.deepEqual([...data.keys()].filter((k) => k.startsWith('dice.')), []);
+  assert.equal(data.get('outra'), 'x');
+  migrateKeys(() => storage); // de novo: nada muda
+  assert.equal(data.get('rolld20.sessionId'), 'kq1t9m3x7c2a8z5r');
+  migrateKeys(() => { throw new Error('SecurityError'); }); // sem localStorage: não quebra
 });

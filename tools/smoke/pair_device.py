@@ -22,8 +22,8 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "verify-py"))
-from dice_verify.chain import canonical_json  # noqa: E402
-from dice_verify.player import link_message, links_valid, player_message  # noqa: E402
+from rolld20_verify.chain import canonical_json  # noqa: E402
+from rolld20_verify.player import link_message, links_valid, player_message  # noqa: E402
 
 
 def call(base: str, method: str, path: str, body: dict | None = None) -> dict:

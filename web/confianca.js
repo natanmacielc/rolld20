@@ -1,15 +1,19 @@
 // Página "Por que confiar?": explicação e conferência de qualquer rolagem pelo próprio usuário.
 import { fetchLog, verifyRoll } from './api.js';
-import { drandRoundUrl, explainRoll, formatBreakdown, historyFromLog, parseRollInput, shellQuote } from './page-logic.js';
+import {
+  drandRoundUrl, explainRoll, formatBreakdown, historyFromLog, migrateKeys, parseRollInput, shellQuote,
+} from './page-logic.js';
 import { roll as computeRoll } from './verifier/dice-v1.js';
 import { playerMessage } from './verifier/chain-v2.js';
 import { $, DIE_COLORS, Tray, copyButton, dieIcon, h, renderChecks } from './ui.js';
 import { setupShell } from './shell.js';
 
-const SESSION_KEY = 'dice.sessionId';
-const REPO = 'https://github.com/natanmacielc/dice';
+const SESSION_KEY = 'rolld20.sessionId';
+const REPO = 'https://github.com/natanmacielc/rolld20';
 
 // ---------- Herói e entrada animada das seções ----------
+
+migrateKeys(() => globalThis.localStorage);
 
 // Um d20 vivo no herói: respira e acompanha o ponteiro com a luz. Parado, mostra só o "20".
 new Tray($('hero-tray'), 20, 1, { pad: 0.16 });
@@ -126,11 +130,11 @@ function renderSummary(proof) {
 function renderPython(proof) {
   const r = proof.roll;
   $('python-cmds').replaceChildren(
-    command(`git clone ${REPO}.git\ncd dice/tools/verify-py`),
+    command(`git clone ${REPO}.git\ncd rolld20/tools/verify-py`),
     h('p', { class: 'field-help', text: 'Refaz o dado a partir dos ingredientes:' }),
-    command(`python3 -m dice_verify --randomness ${proof.beacon.randomness} --seed ${shellQuote(r.clientSeed)} --nonce ${r.nonce} --expr ${r.expression} --signature ${proof.beacon.signature}`),
+    command(`python3 -m rolld20_verify --randomness ${proof.beacon.randomness} --seed ${shellQuote(r.clientSeed)} --nonce ${r.nonce} --expr ${r.expression} --signature ${proof.beacon.signature}`),
     h('p', { class: 'field-help', text: 'Ou confere a prova inteira (cadeia, assinatura de quem rolou, round e resultado):' }),
-    command(`python3 -m pip install cryptography\ncurl -s ${location.origin}/api/rolls/${r.rollId}/proof > prova.json\npython3 -m dice_verify.proof prova.json`),
+    command(`python3 -m pip install cryptography\ncurl -s ${location.origin}/api/rolls/${r.rollId}/proof > prova.json\npython3 -m rolld20_verify.proof prova.json`),
     ...playerBlock(proof));
 }
 

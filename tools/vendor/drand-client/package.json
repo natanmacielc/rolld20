@@ -1,5 +1,5 @@
 {
-  "name": "dice-vendor-drand-client",
+  "name": "rolld20-vendor-drand-client",
   "private": true,
   "description": "Gera web/vendor/drand-client-1.4.2.mjs. Ver build.sh.",
   "type": "module",

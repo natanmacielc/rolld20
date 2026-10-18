@@ -14,7 +14,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "verify-py"))
-from dice_verify.player import player_message  # noqa: E402
+from rolld20_verify.player import player_message  # noqa: E402
 
 
 def main(argv: list[str]) -> int:

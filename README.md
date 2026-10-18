@@ -1,6 +1,6 @@
-# Roll Dice
+# RollD20
 
-[![CI](https://github.com/natanmacielc/dice/actions/workflows/ci.yml/badge.svg)](https://github.com/natanmacielc/dice/actions/workflows/ci.yml)
+[![CI](https://github.com/natanmacielc/rolld20/actions/workflows/ci.yml/badge.svg)](https://github.com/natanmacielc/rolld20/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 **Provably fair dice for tabletop RPGs.** Every roll comes from public randomness that did not exist yet when the roll was requested, so nobody (not the players, not the game master, not the server) can predict or pick the result. Anyone can recompute it and check.
@@ -23,7 +23,7 @@ Every roll has a page at `/r/{rollId}` and a downloadable proof. Three independe
 
 | Verifier | Where |
 |---|---|
-| Java | [`dice-core/`](dice-core) (JDK only, no dependencies) |
+| Java | [`rolld20-core/`](rolld20-core) (JDK only, no dependencies) |
 | JavaScript (runs in your browser) | [`web/verifier/`](web/verifier) |
 | Python (CLI) | [`tools/verify-py/`](tools/verify-py) |
 
@@ -32,14 +32,14 @@ Check a proof with the Python verifier:
 ```sh
 curl -s https://dice.nimbos.solutions/api/rolls/<rollId>/proof > proof.json
 cd tools/verify-py && python3 -m pip install cryptography==50.0.2
-python3 -m dice_verify.proof ../../proof.json
+python3 -m rolld20_verify.proof ../../proof.json
 # {"valid": true, "rollId": "...", "dice": [4, 2], "total": 9, ...}
 ```
 
 Or recompute a roll from its inputs:
 
 ```sh
-python3 -m dice_verify --randomness <hex> --seed "<clientSeed>" --nonce 1 --expr 2d6+3
+python3 -m rolld20_verify --randomness <hex> --seed "<clientSeed>" --nonce 1 --expr 2d6+3
 ```
 
 The whole table log is public at `GET /api/sessions/{sessionId}/log`.
@@ -59,8 +59,8 @@ A modular monolith in Java 21 (Maven multi-module, one deployable artifact).
 | Module | What it is |
 |---|---|
 | [`spec/`](spec) | Algorithm spec and test vectors: the source of truth |
-| [`dice-core/`](dice-core) | Pure Java (JDK only): roller, expression parser, verifier |
-| [`dice-app/`](dice-app) | Quarkus: REST API, DynamoDB, S3, OG images, drand client |
+| [`rolld20-core/`](rolld20-core) | Pure Java (JDK only): roller, expression parser, verifier |
+| [`rolld20-app/`](rolld20-app) | Quarkus: REST API, DynamoDB, S3, OG images, drand client |
 | [`web/`](web) | Static site and JS verifier (strict CSP, no framework) |
 | [`tools/verify-py/`](tools/verify-py) | Independent Python verifier |
 | [`infra/`](infra) | AWS CDK in Java |
@@ -72,7 +72,7 @@ On AWS: CloudFront (flat-rate **Free** plan, with WAF) → Lambda (Quarkus with 
 1. Always use the **target** round's randomness, never the latest.
 2. The hash chain never forks: atomic writes conditioned on the sequence number.
 3. Changing the algorithm means a new version (v2) with the spec, vectors and all three verifiers updated together.
-4. `dice-core` depends on nothing but the JDK.
+4. `rolld20-core` depends on nothing but the JDK.
 5. No homemade crypto.
 6. drand's randomness must equal `SHA-256(signature)`.
 7. The public log includes pending and expired requests.
@@ -83,13 +83,13 @@ Requires JDK 21, Docker (DynamoDB Local via Testcontainers), Node 22 and Python 
 
 ```sh
 ./mvnw -q verify                                   # Java build and tests
-./mvnw -q -pl dice-core test                       # core only
+./mvnw -q -pl rolld20-core test                       # core only
 node --test "web/**/*.test.mjs"                    # JS verifier and web logic
 python3 -m pytest tools/verify-py                  # Python verifier (needs pytest and cryptography)
 ./mvnw -f infra/pom.xml verify                     # CDK template tests
 ```
 
-To run the app locally: `./mvnw -pl dice-app quarkus:dev` with DynamoDB Local and s3mock (endpoint overrides in [`CLAUDE.md`](CLAUDE.md)). Deploys go only through GitHub Actions.
+To run the app locally: `./mvnw -pl rolld20-app quarkus:dev` with DynamoDB Local and s3mock (endpoint overrides in [`CLAUDE.md`](CLAUDE.md)). Deploys go only through GitHub Actions.
 
 ## License
 

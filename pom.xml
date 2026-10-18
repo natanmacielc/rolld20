@@ -4,16 +4,16 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.github.natanmacielc.dice</groupId>
-    <artifactId>dice-parent</artifactId>
+    <groupId>io.github.natanmacielc.rolld20</groupId>
+    <artifactId>rolld20-parent</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>Roll Dice</name>
+    <name>RollD20</name>
 
     <modules>
-        <module>dice-core</module>
-        <module>dice-app</module>
+        <module>rolld20-core</module>
+        <module>rolld20-app</module>
     </modules>
 
     <properties>
@@ -50,8 +50,8 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>io.github.natanmacielc.dice</groupId>
-                <artifactId>dice-core</artifactId>
+                <groupId>io.github.natanmacielc.rolld20</groupId>
+                <artifactId>rolld20-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

@@ -1,6 +1,6 @@
 # infra
 
-AWS CDK (Java) do Roll Dice. Quatro stacks:
+AWS CDK (Java) do RollD20. Quatro stacks:
 
 | Stack | Região | Quem aplica |
 |---|---|---|
@@ -18,7 +18,7 @@ O deploy normal acontece **só** pelo workflow `.github/workflows/deploy-dev.yml
 cd infra && npx --yes aws-cdk@2.1143.0 synth -c account=111111111111 -c hostedZoneId=Z000EXAMPLE
 ```
 
-O synth precisa de `dice-app/target/function.zip` (`./mvnw -pl dice-core,dice-app -am package`). Nenhuma credencial AWS é usada no synth: a zona do Route 53 entra por contexto, sem lookup.
+O synth precisa de `rolld20-app/target/function.zip` (`./mvnw -pl rolld20-core,rolld20-app -am package`). Nenhuma credencial AWS é usada no synth: a zona do Route 53 entra por contexto, sem lookup.
 
 Contexto (em `cdk.json` ou `-c chave=valor`):
 

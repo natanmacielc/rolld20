@@ -1,6 +1,6 @@
 {
-  "name": "Roll Dice",
-  "short_name": "Roll Dice",
+  "name": "RollD20",
+  "short_name": "RollD20",
   "description": "Rolagens de dados que qualquer um confere. O resultado vem de um número público do drand que ainda não existe quando você pede.",
   "lang": "pt-BR",
   "start_url": "/",

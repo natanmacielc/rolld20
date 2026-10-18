@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from dice_verify import DiceError, randomness_matches_signature, roll, verify_roll
+from rolld20_verify import DiceError, randomness_matches_signature, roll, verify_roll
 
 VECTORS = json.loads(
     (Path(__file__).resolve().parents[3] / "spec" / "test-vectors.json").read_text(encoding="utf-8")

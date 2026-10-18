@@ -1,5 +1,5 @@
-import io.github.natanmacielc.dice.core.DiceRoller;
-import io.github.natanmacielc.dice.core.RollResult;
+import io.github.natanmacielc.rolld20.core.DiceRoller;
+import io.github.natanmacielc.rolld20.core.RollResult;
 import java.util.OptionalLong;
 import java.util.stream.LongStream;
 
@@ -7,7 +7,7 @@ import java.util.stream.LongStream;
  * Busca seeds que provocam rejeição de viés real (v >= limite) num roll de 20 dados.
  * Roda uma vez; as seeds encontradas ficam fixas em GenerateVectors.java.
  *
- * Uso: java -cp dice-core/target/classes tools/vectorgen/FindRejections.java
+ * Uso: java -cp rolld20-core/target/classes tools/vectorgen/FindRejections.java
  */
 public class FindRejections {
 

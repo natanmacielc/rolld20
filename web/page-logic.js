@@ -24,6 +24,33 @@ const ERROR_MESSAGES = {
   SERVER_BUSY: 'O servidor está no limite agora. Tente de novo em instantes.',
 };
 
+/** Chaves do localStorage de antes do projeto virar RollD20 (antiga → nova), na mesma origem. */
+export const LEGACY_STORAGE_KEYS = {
+  'dice.sessionId': 'rolld20.sessionId',
+  'dice.sessionName': 'rolld20.sessionName',
+  'dice.tables': 'rolld20.tables',
+  'dice.playerName': 'rolld20.playerName',
+};
+
+/**
+ * Traz, uma vez, o valor de cada chave antiga para a nova (sem sobrescrever o que já existe) e apaga a
+ * antiga. getStorage devolve o localStorage; sem ele (modo privado, Node) não faz nada.
+ */
+export function migrateKeys(getStorage, keys = LEGACY_STORAGE_KEYS) {
+  try {
+    const storage = getStorage();
+    if (!storage) return;
+    for (const [from, to] of Object.entries(keys)) {
+      const old = storage.getItem(from);
+      if (old === null) continue;
+      if (storage.getItem(to) === null) storage.setItem(to, old);
+      storage.removeItem(from);
+    }
+  } catch {
+    // sem localStorage: nada para migrar
+  }
+}
+
 /** Rótulo de uma mesa: o nome, ou "Mesa" com os 4 primeiros caracteres do ID. */
 export function tableLabel({ name, sessionId }) {
   return name?.trim() || `Mesa ${sessionId.slice(0, 4)}`;

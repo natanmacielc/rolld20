@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from dice_verify.chain import CHAIN_FORMAT_V2, verify_proof, verify_segment
-from dice_verify.player import fingerprint, link_message, name_problem, player_message, verify_ed25519
-from dice_verify.proof import main as proof_main
+from rolld20_verify.chain import CHAIN_FORMAT_V2, verify_proof, verify_segment
+from rolld20_verify.player import fingerprint, link_message, name_problem, player_message, verify_ed25519
+from rolld20_verify.proof import main as proof_main
 
 VECTORS = json.loads(
     (Path(__file__).resolve().parents[3] / "spec" / "test-vectors.json").read_text(encoding="utf-8")
