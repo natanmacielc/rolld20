@@ -1,4 +1,4 @@
-# Roll Dice
+# RollD20
 
 Sistema que prova que rolagens de dados em RPGs são imparciais. O resultado deriva de um valor público do drand que não existia quando o pedido foi feito; qualquer pessoa recalcula e confere. O servidor é só um livro-razão: não pode prever, escolher nem reescrever resultados.
 
@@ -7,8 +7,8 @@ Sistema que prova que rolagens de dados em RPGs são imparciais. O resultado der
 Monólito modular, Java 21, Maven multi-módulo, um único artefato implantável. Sem microsserviços.
 
 - `spec/`: ALGORITHM.md e test-vectors.json. Fonte da verdade do algoritmo.
-- `dice-core/`: Java puro, só JDK. Rolagem, parser e verificador.
-- `dice-app/`: Quarkus. REST, DynamoDB, S3, imagem OG e cliente drand.
+- `rolld20-core/`: Java puro, só JDK. Rolagem, parser e verificador.
+- `rolld20-app/`: Quarkus. REST, DynamoDB, S3, imagem OG e cliente drand.
 - `web/`: site estático e verificador em JS.
 - `tools/verify-py/`: verificador independente em Python.
 - `infra/`: AWS CDK em Java.
@@ -19,26 +19,26 @@ Deploy: CloudFront (plano flat-rate Free, com WAF), Lambda (Quarkus, SnapStart) 
 
 JDK 21 obrigatório (o enforcer bloqueia versões menores). Nesta máquina o `java` padrão é 17, então antes do Maven rode `export JAVA_HOME=$(/usr/libexec/java_home -v 21)`.
 
-- Build e testes: `./mvnw -q verify`. Os testes do dice-app precisam do Docker (DynamoDB Local via Testcontainers).
-- Só o núcleo: `./mvnw -q -pl dice-core test`
+- Build e testes: `./mvnw -q verify`. Os testes do rolld20-app precisam do Docker (DynamoDB Local via Testcontainers).
+- Só o núcleo: `./mvnw -q -pl rolld20-core test`
 - Verificador Python: `python3 -m pytest tools/verify-py`. Localmente, use o venv: `python3 -m venv .venv && .venv/bin/pip install pytest==9.1.1 cryptography==50.0.2`, depois `.venv/bin/python -m pytest tools/verify-py`. A cryptography só é usada pela chain-v2 (Ed25519).
-- CLI Python: `cd tools/verify-py && python3 -m dice_verify --randomness HEX --seed TEXTO --nonce N --expr 2d6+3 [--signature HEX]`
-- Verificar uma prova: `cd tools/verify-py && python3 -m dice_verify.proof prova.json`
+- CLI Python: `cd tools/verify-py && python3 -m rolld20_verify --randomness HEX --seed TEXTO --nonce N --expr 2d6+3 [--signature HEX]`
+- Verificar uma prova: `cd tools/verify-py && python3 -m rolld20_verify.proof prova.json`
 - Verificador JS: `node --test "web/**/*.test.mjs"`. O Node 22 não aceita diretório como argumento do `--test`.
-- Regerar vetores (só quando a spec mudar, com versão nova): `./mvnw -q -pl dice-core compile`, depois `java -cp dice-core/target/classes tools/vectorgen/GenerateVectors.java spec/test-vectors.json`. Para achar seeds com rejeição real, use `tools/vectorgen/FindRejections.java` (leva alguns minutos).
-- Teste contra o drand real (fora do CI): `./mvnw -pl dice-app -am test -Plive` e `DRAND_LIVE=1 node --test web/verifier/drand-verify.test.mjs`
-- Imagem OG dentro da imagem do AWS Lambda (fora do CI, precisa de Docker): `./mvnw -pl dice-app -am verify -Plambda`
+- Regerar vetores (só quando a spec mudar, com versão nova): `./mvnw -q -pl rolld20-core compile`, depois `java -cp rolld20-core/target/classes tools/vectorgen/GenerateVectors.java spec/test-vectors.json`. Para achar seeds com rejeição real, use `tools/vectorgen/FindRejections.java` (leva alguns minutos).
+- Teste contra o drand real (fora do CI): `./mvnw -pl rolld20-app -am test -Plive` e `DRAND_LIVE=1 node --test web/verifier/drand-verify.test.mjs`
+- Imagem OG dentro da imagem do AWS Lambda (fora do CI, precisa de Docker): `./mvnw -pl rolld20-app -am verify -Plambda`
 - Rebuild do drand-client vendorizado: `tools/vendor/drand-client/build.sh` (o SHA-256 tem de bater com web/vendor/README.md)
-- Fonte da web (Bricolage Grotesque, recorte reprodutível): comandos e SHA-256 em web/fonts/README.md.
-- No `quarkus:dev`, mudanças em web/ não recarregam sozinhas (o diretório fica fora do módulo): rode `./mvnw -pl dice-app process-resources` ou reinicie.
-- Ícones (favicon.ico, apple-touch-icon.png, icon-512.png): `java tools/icons/GenerateIcons.java web` (JDK 21, da raiz). O web/favicon.svg é o mesmo d20 à mão; mudou um, mude o outro.
-- Imagens OG estáticas (web/static): `java -cp dice-app/target/classes io.github.natanmacielc.dice.app.og.OgImageRenderer <dir>`
+- Fontes da web (Cinzel e Bricolage Grotesque, recortes reprodutíveis): comandos e SHA-256 em web/fonts/README.md.
+- No `quarkus:dev`, mudanças em web/ não recarregam sozinhas (o diretório fica fora do módulo): rode `./mvnw -pl rolld20-app process-resources` ou reinicie.
+- Ícones (favicon.ico, apple-touch-icon.png, icon-192.png, icon-512.png, icon-maskable-512.png): `java tools/icons/GenerateIcons.java web` (JDK 21, da raiz). O web/favicon.svg é o mesmo d20 à mão; mudou um, mude o outro.
+- Imagens OG estáticas (web/static): `java -cp rolld20-app/target/classes io.github.natanmacielc.rolld20.app.og.OgImageRenderer <dir>`
 - Infra (fora do reactor Maven): `./mvnw -f infra/pom.xml verify` (CDK assertions, precisa de Node) e, para sintetizar, `cd infra && npx --yes aws-cdk@2.1143.0 synth -c account=111111111111 -c hostedZoneId=Z000EXAMPLE`. Bootstrap e checklist em infra/README.md e infra/SECURITY.md.
 - Deploy: só pelo GitHub Actions (`.github/workflows/deploy-dev.yml`, OIDC). Nunca rode `cdk deploy` nem `aws` localmente.
-- Rodar o app localmente: o dice-app empacota para Lambda (`target/function.zip`), então `java -jar` não sobe servidor. Use `./mvnw -pl dice-app quarkus:dev` (mock event server do Lambda) com DynamoDB Local e s3mock, passando `-Ddice.dynamodb.endpoint-override=...` e `-Ddice.s3.endpoint-override=...`.
+- Rodar o app localmente: o rolld20-app empacota para Lambda (`target/function.zip`), então `java -jar` não sobe servidor. Use `./mvnw -pl rolld20-app quarkus:dev` (mock event server do Lambda) com DynamoDB Local e s3mock, passando `-Drolld20.dynamodb.endpoint-override=...` e `-Drolld20.s3.endpoint-override=...`.
 - Smoke test de um ambiente: `tools/smoke/smoke-dev.sh <url>` (o deploy roda contra https://dice.nimbos.solutions). Precisa da cryptography (`tools/smoke/requirements.txt`): o pedido sai assinado por `tools/smoke/sign_request.py`, e `tools/smoke/pair_device.py` pareia um segundo aparelho pela API e rola com ele, e `tools/smoke/my_tables.py` confere a lista de mesas.
 - CI: `.github/workflows/ci.yml` roda os três jobs (Java, Python e JS) em todo PR e push na main e confere se `spec/test-vectors.json` bate com o gerador. As actions são fixadas por SHA.
-- Guarda da invariante 4: o enforcer do dice-core falha o build se aparecer uma dependência que não seja de teste.
+- Guarda da invariante 4: o enforcer do rolld20-core falha o build se aparecer uma dependência que não seja de teste.
 
 ## Algoritmo v1 (detalhes em spec/ALGORITHM.md)
 
@@ -55,9 +55,11 @@ JDK 21 obrigatório (o enforcer bloqueia versões menores). Nesta máquina o `ja
 - Não existe server_seed.
 - Identidade (chain-v2, Fase 7, spec seção 7): todo REQUEST tem `player` {publicKey, name, requestId, signature, identityKey, links}. O aparelho (publicKey) assina em Ed25519 o JSON canônico de {context "dice-player-v1", sessionId, clientSeed, expression canônica, identityKey, name, requestId}. A identidade é a chave do primeiro aparelho; os outros entram por vínculos (até 8), cada um assinado pela chave anterior sobre {context "dice-device-v1", identityKey, deviceKey}. A identityKey tem de estar na mensagem do pedido (senão outro jogador vincula seu aparelho e toma seus pedidos). Apelido de 1 a 32 bytes (regras da seed). requestId repetido é replay (marcador REQ#{requestId} no DynamoDB). Mesas novas são chain-v2; mesas sem `chainFormat` são chain-v1, só leitura (409 TABLE_READ_ONLY), e o app cria outra. A chave nasce no navegador (web/identity.js, não exportável, IndexedDB) e nunca vai ao servidor. Impressão (só exibição): 4 primeiros bytes de SHA-256(identityKey), "3f9a-c2e1". Sem revogação de aparelho por enquanto.
 - Custo (Fase 9, infra/README.md "Custo zero e teto de gasto"): a API fica toda sob `/api` (o plano Free aceita 5 behaviors: default, /og/*, /r/* e /api/*); `/r/{rollId}` continua fora. Todo POST manda `x-amz-content-sha256` (SHA-256 hex do corpo), senão o CloudFront não assina o pedido à Function URL e a origem dá 403. Corpo até 16 KB. Throttle do DynamoDB vira 503 `SERVER_BUSY`. WAF bloqueia por IP com 403 padrão (o plano Free não aceita resposta customizada nem response headers policy própria; os headers de segurança saem por CloudFront Function de viewer response). Kill switch (alarmes de invocações e duração por hora) zera a concorrência do app; religar é manual no console (infra/README.md, "Derrubar e religar").
-- Pareamento de aparelhos (spec 7.7): /api/pairings (dice-app/pairing) só repassa dados públicos, item PAIRING#{id} com TTL `expiresAt` (10 min). O segredo vai no fragmento `/#parear={id}.{hex}` e autentica os dois sentidos com HMAC-SHA256 (web/pairing.js). QR do web/vendor (qrcode-generator, rebuild em tools/vendor/qrcode/build.sh).
-- Lista de mesas (Fase 8, spec 7.8): `POST /api/me/tables` com action list/add/remove, sempre assinado pelo aparelho (contexto "dice-tables-v1", `at` a até 5 min do relógio), porque o ID da mesa é o que dá acesso a ela. Índice IDENTITY#{identityKey}/TABLE#{sessionId} (dice-app/tables), gravado ao rolar (fora da transação da cadeia, melhor esforço) e ao criar/entrar numa mesa; página de 20 por cursor, mais recentes primeiro. Não sustenta confiança nenhuma.
-- Web (Fase 8): clicar no dado rola; a folha da mesa fecha ao criar, entrar ou trocar de mesa; a folha "Você" (avatar no cabeçalho) tem apelido, identidade e aparelhos; cor e inicial do jogador (playerColor/initialOf em page-logic.js) são só exibição, a impressão vai escrita ao lado. "Suas mesas" é uma folha própria (6 por página sobre as páginas de 20 do servidor) com cache `dice.tables` no localStorage por identityKey: só pede `list` ao abrir com cache vencido (10 min) ou no botão de atualizar; criar, entrar, rolar e tirar atualizam o cache local.
+- Pareamento de aparelhos (spec 7.7): /api/pairings (rolld20-app/pairing) só repassa dados públicos, item PAIRING#{id} com TTL `expiresAt` (10 min). O segredo vai no fragmento `/#parear={id}.{hex}` e autentica os dois sentidos com HMAC-SHA256 (web/pairing.js). QR do web/vendor (qrcode-generator, rebuild em tools/vendor/qrcode/build.sh).
+- Lista de mesas (Fase 8, spec 7.8): `POST /api/me/tables` com action list/add/remove, sempre assinado pelo aparelho (contexto "dice-tables-v1", `at` a até 5 min do relógio), porque o ID da mesa é o que dá acesso a ela. Índice IDENTITY#{identityKey}/TABLE#{sessionId} (rolld20-app/tables), gravado ao rolar (fora da transação da cadeia, melhor esforço) e ao criar/entrar numa mesa; página de 20 por cursor, mais recentes primeiro. Não sustenta confiança nenhuma.
+- Web (Fase 8): clicar no dado rola; a folha da mesa fecha ao criar, entrar ou trocar de mesa; a folha "Você" (avatar no cabeçalho) tem apelido, identidade e aparelhos; cor e inicial do jogador (playerColor/initialOf em page-logic.js) são só exibição, a impressão vai escrita ao lado. "Suas mesas" é uma folha própria (6 por página sobre as páginas de 20 do servidor) com cache `rolld20.tables` no localStorage por identityKey: só pede `list` ao abrir com cache vencido (10 min) ou no botão de atualizar; criar, entrar, rolar e tirar atualizam o cache local.
+- Web (Fase 10, tema Arcano noturno): os dados são 3D, desenhados pelo motor próprio em Canvas 2D de web/dice3d/ (poliedros, quatérnios, uma luz por cena, sombra no veludo, números gravados em Cinzel). A bandeja (tray.js) mantém a API antiga (setCount, setSides, idle, tumble, land, show). Esperando o drand, as faces têm runas (só traços); os números só existem a partir de land(values)/show(values), e o teste tray.test.mjs garante que nenhum dígito é desenhado antes. land termina por tempo, não por quadro. O laço de quadros dorme fora da tela, com a aba oculta e com movimento reduzido. Ícones dos dados (seletor, histórico, resumo) são SVG estáticos do mesmo motor. shell.js: cabeçalho de vidro, aviso offline e tilt dos cards. manifest.json e View Transitions entre páginas (desligadas com movimento reduzido).
+- Nome RollD20 (antes Roll Dice/dice): código, pacotes (io.github.natanmacielc.rolld20, rolld20_verify), módulos, config `rolld20.*` e variáveis `ROLLD20_*` usam o nome novo. Ficam com "dice", de propósito: os ids do protocolo (dice-v1, dice-player-v1, dice-device-v1, dice-tables-v1, dice-pair-v1, que entram em hash e assinatura), a palavra "dice" como dado (campos `dice`, DICE_COUNT_OUT_OF_RANGE, web/dice3d), os nomes físicos da AWS (stacks DiceGithubOidcStack, DiceCertStack, DiceDevStack e DicePlanStack, role dice-github-deploy, WAF dice-web, budget dice-mensal) e o domínio dice.nimbos.solutions; mudar estes é uma fase própria com migração. As chaves antigas do navegador (localStorage dice.* e IndexedDB dice-identity) são trazidas uma vez para rolld20.* (migrateKeys em page-logic.js, legacyRecord em identity.js).
 - Verificação BLS: só no navegador (Fase 4). O backend checa randomness == SHA-256(signature) e o guarda de relógio: latest só é aceito a ±1 round do esperado por floor((agora - genesis)/3) + 1.
 
 ## Invariantes (nunca quebrar)
@@ -65,7 +67,7 @@ JDK 21 obrigatório (o enforcer bloqueia versões menores). Nesta máquina o `ja
 1. Usar o randomness do round ALVO, nunca o latest.
 2. A cadeia nunca bifurca: escrita atômica com condição de seq.
 3. Mudou o algoritmo? Suba a versão (v2) e atualize spec/, test-vectors e os três verificadores (Java, JS, Python) no mesmo PR. Nunca altere a v1 silenciosamente.
-4. dice-core não depende de nada além do JDK.
+4. rolld20-core não depende de nada além do JDK.
 5. Não implemente criptografia própria. Use MessageDigest e bibliotecas consolidadas.
 6. O randomness do drand deve bater com SHA-256(signature).
 7. O log público inclui pedidos pendentes e expirados.

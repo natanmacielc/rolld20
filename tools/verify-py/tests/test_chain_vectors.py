@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from dice_verify.chain import ChainError, canonical_json, time_of, verify_proof, verify_segment
-from dice_verify.proof import main as proof_main
+from rolld20_verify.chain import ChainError, canonical_json, time_of, verify_proof, verify_segment
+from rolld20_verify.proof import main as proof_main
 
 VECTORS = json.loads(
     (Path(__file__).resolve().parents[3] / "spec" / "test-vectors.json").read_text(encoding="utf-8")

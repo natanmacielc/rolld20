@@ -3,8 +3,10 @@ import { getJson, verifyRoll, verifyTable } from './api.js';
 import { criticalOf, formatBreakdown, playerColor } from './page-logic.js';
 import { parseExpression } from './verifier/dice-v1.js';
 import {
-  $, DIE_COLORS, Tray, celebrate, countUp, replay, ring, runTableCheck, runVerificationBadge, setupDialogs, shareLink, sleep,
+  $, DIE_COLORS, Tray, celebrate, countUp, diceChips, replay, ring, runTableCheck, runVerificationBadge, setupDialogs, shareLink,
+  sleep,
 } from './ui.js';
+import { setupShell } from './shell.js';
 
 const STATUS = {
   PENDING: 'Aguardando o drand',
@@ -35,10 +37,10 @@ async function reveal(roll) {
   stageRing.mode('done');
   $('countdown').textContent = `round #${round} do drand`;
   await tray.land(dice);
-  celebrate($('stage'), $('banner'), criticalOf(roll.expression, dice));
+  celebrate($('stage'), $('banner'), criticalOf(roll.expression, dice), tray);
   replay($('result'), 'is-in');
   countUp($('total'), total, Math.min(900, 300 + total * 8));
-  $('dice').textContent = formatBreakdown(dice, modifier);
+  diceChips($('dice'), { dice, modifier, sides, text: formatBreakdown(dice, modifier) });
   runVerificationBadge($('verify-badge'), $('verify-dialog'), rollId, verifyRoll);
 }
 
@@ -112,4 +114,5 @@ $('verify-table').addEventListener('click', () => {
 });
 
 setupDialogs();
+setupShell();
 follow();

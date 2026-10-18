@@ -28,6 +28,29 @@ for (const page of ['index.html', 'confianca.html']) {
   });
 }
 
+for (const page of ['index.html', 'confianca.html']) {
+  test(`${page}: manifest e as duas fontes pré-carregadas`, () => {
+    const html = read(page);
+    assert.match(html, /<link rel="manifest" href="\/manifest\.json">/);
+    assert.match(html, /<link rel="preload" href="\/fonts\/cinzel\.woff2" as="font" type="font\/woff2" crossorigin>/);
+    assert.match(html, /<link rel="preload" href="\/fonts\/bricolage-grotesque\.woff2" as="font" type="font\/woff2" crossorigin>/);
+  });
+}
+
+test('manifest.json: app instalável com ícones que existem', () => {
+  const manifest = JSON.parse(read('manifest.json'));
+  assert.equal(manifest.start_url, '/');
+  assert.equal(manifest.display, 'standalone');
+  assert.ok(manifest.icons.some((i) => i.purpose === 'maskable'));
+  for (const icon of manifest.icons) {
+    const png = readFileSync(new URL(`.${icon.src}`, web));
+    assert.deepEqual([...png.subarray(0, 4)], [0x89, 0x50, 0x4e, 0x47]);
+    const [w, h] = icon.sizes.split('x').map(Number);
+    assert.equal(png.readUInt32BE(16), w, icon.src);
+    assert.equal(png.readUInt32BE(20), h, icon.src);
+  }
+});
+
 test('index.html sem og:url nem canonical: o convite /?mesa= não pode virar link da home', () => {
   const html = read('index.html');
   assert.equal(meta(html, 'og:url'), undefined);

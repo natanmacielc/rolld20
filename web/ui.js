@@ -1,12 +1,13 @@
-// Peças visuais compartilhadas: dados em SVG, animações, diálogos e checklist.
+// Peças visuais compartilhadas: dados 3D (de dice3d/), aro do tablado, diálogos, avisos e checklist.
 // Sem regra de negócio e sem innerHTML: todo texto entra por textContent.
 
-const SVG_NS = 'http://www.w3.org/2000/svg';
+import { dieIcon } from './dice3d/icon.js';
+import { DIE_COLORS, DIE_SIDES } from './dice3d/shade.js';
+import { Tray } from './dice3d/tray.js';
 
-export const DIE_SIDES = [4, 6, 8, 10, 12, 20, 100];
-export const DIE_COLORS = {
-  4: '#2ee6ff', 6: '#4dffa6', 8: '#ffc23d', 10: '#ff7a3d', 12: '#ff3d9a', 20: '#a86bff', 100: '#6b8cff',
-};
+export { DIE_COLORS, DIE_SIDES, Tray, dieIcon };
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
 export const reducedMotion = () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -32,89 +33,10 @@ function svg(tag, attrs = {}) {
   return node;
 }
 
-// ---------- Formas dos dados (viewBox 200x200) ----------
-
-const polar = (n, r, rot = -90, cx = 100, cy = 100) => Array.from({ length: n }, (_, i) => {
-  const a = ((rot + (360 * i) / n) * Math.PI) / 180;
-  return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
-});
-const path = (...polylines) => polylines.map((pl) => `M${pl.map((p) => p.map((v) => v.toFixed(1)).join(' ')).join('L')}`).join('');
-
-const hex = polar(6, 92);
-const deca = polar(10, 90);
-const pent = polar(5, 48, -90, 100, 104);
-const tri20 = [[100, 48], [146, 128], [54, 128]];
-
-/** Cada forma começa no ponto mais alto, no sentido horário: o morph casa vértice com vértice. */
-const SHAPES = {
-  4: { outline: [[100, 14], [188, 168], [12, 168]], cy: 122, size: 56, facets: '' },
-  6: { outline: [[100, 22], [178, 22], [178, 178], [22, 178], [22, 22]], cy: 100, size: 84,
-    facets: path([[40, 40], [160, 40], [160, 160], [40, 160], [40, 40]]) },
-  8: { outline: [[100, 8], [184, 100], [100, 192], [16, 100]], cy: 98, size: 48,
-    facets: path([[100, 8], [156, 128], [44, 128], [100, 8]], [[44, 128], [16, 100]], [[156, 128], [184, 100]],
-      [[44, 128], [100, 192], [156, 128]]) },
-  10: { outline: [[100, 6], [186, 92], [100, 194], [14, 92]], cy: 92, size: 44,
-    facets: path([[100, 6], [142, 116], [100, 140], [58, 116], [100, 6]], [[142, 116], [186, 92]],
-      [[58, 116], [14, 92]], [[100, 140], [100, 194]]) },
-  12: { outline: deca, cy: 104, size: 50,
-    facets: path([...pent, pent[0]], ...pent.map((p, i) => [p, deca[2 * i]])) },
-  20: { outline: hex, cy: 103, size: 46,
-    facets: path([...tri20, tri20[0]], [tri20[0], hex[0]], [tri20[0], hex[1]], [tri20[0], hex[5]],
-      [tri20[1], hex[1]], [tri20[1], hex[2]], [tri20[1], hex[3]], [tri20[2], hex[3]], [tri20[2], hex[4]], [tri20[2], hex[5]]) },
-  100: { outline: deca, cy: 100, size: 50,
-    facets: path([...polar(10, 62), polar(10, 62)[0]], ...deca.map((p, i) => [p, polar(10, 62)[i]])) },
-};
-
-const MORPH_POINTS = 60;
-
-/** Reamostra o contorno em N pontos mantendo os vértices (cantos não arredondam no morph). */
-function resample(outline, n = MORPH_POINTS) {
-  const closed = [...outline, outline[0]];
-  const lengths = outline.map((p, i) => Math.hypot(closed[i + 1][0] - p[0], closed[i + 1][1] - p[1]));
-  const total = lengths.reduce((a, b) => a + b, 0);
-  const counts = lengths.map((l) => Math.max(1, Math.floor((n * l) / total)));
-  for (let sum = counts.reduce((a, b) => a + b, 0); sum < n; sum++) {
-    let best = 0; // a aresta com o maior espaçamento ganha mais um ponto
-    counts.forEach((c, i) => { if (lengths[i] / c > lengths[best] / counts[best]) best = i; });
-    counts[best]++;
-  }
-  const out = [];
-  outline.forEach((p, i) => {
-    const q = closed[i + 1];
-    for (let k = 0; k < counts[i]; k++) {
-      const t = k / counts[i];
-      out.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]);
-    }
-  });
-  return out;
-}
-
-const POINTS = Object.fromEntries(DIE_SIDES.map((s) => [s, resample(SHAPES[s].outline)]));
-const toPath = (pts) => `M${pts.map(([x, y]) => `${x.toFixed(2)} ${y.toFixed(2)}`).join('L')}Z`;
-const easeOutBack = (t) => 1 + 2.2 * (t - 1) ** 3 + 1.2 * (t - 1) ** 2;
-
-function faceSize(sides, text) {
-  const base = SHAPES[sides].size;
-  return text.length >= 3 ? base * 0.74 : base;
-}
-
 /** Ícone de traço (24×24, mesmo estilo dos botões): um path por string. */
 export function lineIcon(...paths) {
   const icon = svg('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true' });
   icon.append(...paths.map((d) => svg('path', { d })));
-  return icon;
-}
-
-/** Ícone estático de um dado (seletor, histórico). */
-export function dieIcon(sides, label = null) {
-  const icon = svg('svg', { viewBox: '0 0 200 200', class: 'die-icon', 'aria-hidden': 'true' });
-  icon.append(svg('path', { class: 'die-body', d: toPath(POINTS[sides]) }), svg('path', { class: 'die-facets', d: SHAPES[sides].facets }));
-  if (label !== null) {
-    const text = String(label);
-    const t = svg('text', { class: 'die-face', x: 100, y: SHAPES[sides].cy, 'font-size': faceSize(sides, text) * 1.25 });
-    t.textContent = text;
-    icon.append(t);
-  }
   return icon;
 }
 
@@ -135,200 +57,7 @@ export function qrSvg(qr, label) {
   return icon;
 }
 
-/** Um dado animável. */
-export class Die {
-  constructor(sides) {
-    this.sides = sides;
-    this.points = POINTS[sides];
-    this.el = h('div', { class: 'die' });
-    this.spin = h('div', { class: 'die-spin' });
-    const g = svg('svg', { viewBox: '0 0 200 200', 'aria-hidden': 'true' });
-    this.body = svg('path', { class: 'die-body' });
-    this.shine = svg('path', { class: 'die-shine' });
-    this.facets = svg('path', { class: 'die-facets' });
-    this.face = svg('text', { class: 'die-face', x: 100 });
-    g.append(this.body, this.shine, this.facets, this.face);
-    this.spin.append(g);
-    this.el.append(this.spin);
-    this.draw(this.points);
-    this.facets.setAttribute('d', SHAPES[sides].facets);
-    this.color(sides);
-    this.idle();
-  }
-
-  color(sides) {
-    this.el.style.setProperty('--c', DIE_COLORS[sides]);
-  }
-
-  draw(points) {
-    this.drawn = points;
-    const d = toPath(points);
-    this.body.setAttribute('d', d);
-    this.shine.setAttribute('d', d);
-  }
-
-  setFace(text, cls = '') {
-    const value = String(text);
-    this.face.textContent = value;
-    this.face.setAttribute('y', SHAPES[this.sides].cy);
-    this.face.setAttribute('font-size', faceSize(this.sides, value));
-    this.el.classList.remove('is-idle', 'is-max', 'is-min');
-    if (cls) this.el.classList.add(cls);
-  }
-
-  idle() {
-    this.setFace(this.sides === 100 ? '%' : this.sides, 'is-idle');
-  }
-
-  /** Troca o número de lados com morph do contorno. Um morph novo interrompe o anterior. */
-  morphTo(sides) {
-    if (sides === this.sides) return;
-    const from = this.drawn;
-    const to = POINTS[sides];
-    const token = (this.morphToken = (this.morphToken ?? 0) + 1);
-    this.sides = sides;
-    this.points = to;
-    this.color(sides);
-    const showNewFacets = () => {
-      this.facets.setAttribute('d', SHAPES[sides].facets);
-      this.idle();
-      this.el.classList.remove('facets-out');
-    };
-    if (reducedMotion()) {
-      this.el.classList.remove('is-morphing', 'facets-out');
-      this.draw(to);
-      showNewFacets();
-      return;
-    }
-    this.el.classList.remove('is-morphing');
-    void this.el.offsetWidth; // reinicia a animação do giro
-    this.el.classList.add('is-morphing', 'facets-out');
-    const start = performance.now();
-    const duration = 520;
-    let swapped = false;
-    const frame = (now) => {
-      if (token !== this.morphToken) return; // outro morph assumiu
-      const t = Math.min(1, Math.max(0, (now - start) / duration));
-      const e = easeOutBack(t);
-      this.draw(from.map(([x, y], i) => [x + (to[i][0] - x) * e, y + (to[i][1] - y) * e]));
-      if (!swapped && t > 0.45) {
-        swapped = true;
-        showNewFacets(); // as facetas do dado novo entram com fade (transition no CSS)
-      }
-      if (t < 1) {
-        requestAnimationFrame(frame);
-      } else {
-        this.draw(to);
-        this.el.classList.remove('is-morphing');
-      }
-    };
-    requestAnimationFrame(frame);
-  }
-
-  tumble() {
-    this.el.classList.remove('is-landing', 'is-max', 'is-min', 'is-idle');
-    this.el.style.setProperty('--tumble-ms', `${420 + Math.random() * 260}ms`);
-    this.el.style.setProperty('--tumble-delay', `${-Math.random() * 600}ms`);
-    this.el.style.setProperty('--tumble-dir', Math.random() < 0.5 ? '1' : '-1');
-    this.setFace('?');
-    this.el.classList.add('is-tumbling');
-  }
-
-  /** Pousa mostrando o valor real. Resolve quando a animação termina. */
-  async land(value, delay = 0) {
-    await sleep(delay);
-    this.el.classList.remove('is-tumbling');
-    void this.el.offsetWidth;
-    this.el.classList.add('is-landing');
-    await sleep(reducedMotion() ? 0 : 200);
-    const max = this.sides === 100 ? 100 : this.sides;
-    this.setFace(value, value === max ? 'is-max' : value === 1 ? 'is-min' : '');
-    await sleep(reducedMotion() ? 0 : 450);
-    this.el.classList.remove('is-landing');
-  }
-}
-
-/** Bandeja de dados: quantidade, tamanho e animações em grupo. */
-export class Tray {
-  constructor(container, sides = 20, count = 1) {
-    this.container = container;
-    this.sides = sides;
-    this.dice = [];
-    this.setCount(count, false);
-  }
-
-  setCount(count, animate = true) {
-    while (this.dice.length < count) {
-      const die = new Die(this.sides);
-      if (animate && !reducedMotion()) {
-        die.el.classList.add('is-entering');
-        die.el.addEventListener('animationend', () => die.el.classList.remove('is-entering'), { once: true });
-      }
-      this.dice.push(die);
-      this.container.append(die.el);
-    }
-    while (this.dice.length > count) {
-      const die = this.dice.pop();
-      if (animate && !reducedMotion()) {
-        die.el.classList.add('is-leaving');
-        setTimeout(() => die.el.remove(), 260);
-      } else {
-        die.el.remove();
-      }
-    }
-    this.container.dataset.size = count === 1 ? 'xl' : count <= 4 ? 'lg' : count <= 9 ? 'md' : 'sm';
-  }
-
-  setSides(sides) {
-    this.sides = sides;
-    for (const die of this.dice) die.morphTo(sides);
-  }
-
-  idle() {
-    for (const die of this.dice) {
-      die.el.classList.remove('is-tumbling', 'is-landing');
-      die.idle();
-    }
-  }
-
-  tumble() {
-    for (const die of this.dice) die.tumble();
-  }
-
-  /** Pousa os dados um a um, com o valor real de cada um. */
-  async land(values) {
-    const step = reducedMotion() ? 0 : Math.max(60, Math.min(160, 900 / values.length));
-    await Promise.all(this.dice.map((die, i) => die.land(values[i], i * step)));
-  }
-
-  /** Mostra valores sem animação (página já resolvida). */
-  show(values) {
-    this.dice.forEach((die, i) => {
-      die.el.classList.remove('is-tumbling', 'is-landing');
-      const max = die.sides === 100 ? 100 : die.sides;
-      die.setFace(values[i], values[i] === max ? 'is-max' : values[i] === 1 ? 'is-min' : '');
-    });
-  }
-}
-
 // ---------- Efeitos ----------
-
-/** Explosão de faíscas a partir do centro do elemento. */
-export function burst(container, { count = 22, colors = ['var(--c)', '#ffffff'], spread = 160 } = {}) {
-  if (reducedMotion()) return;
-  for (let i = 0; i < count; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const distance = spread * (0.45 + Math.random() * 0.55);
-    const spark = h('span', { class: 'spark' });
-    spark.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
-    spark.style.setProperty('--dy', `${Math.sin(angle) * distance}px`);
-    spark.style.setProperty('--spark', colors[i % colors.length]);
-    spark.style.setProperty('--spark-size', `${4 + Math.random() * 6}px`);
-    spark.style.setProperty('--spark-ms', `${600 + Math.random() * 500}ms`);
-    container.append(spark);
-    spark.addEventListener('animationend', () => spark.remove(), { once: true });
-  }
-}
 
 /** Conta de 0 até o valor. */
 export function countUp(el, to, ms = 700) {
@@ -347,79 +76,166 @@ export function countUp(el, to, ms = 700) {
   requestAnimationFrame(frame);
 }
 
-/** Anel do palco: progresso até o round alvo (0..1) e modos idle/waiting/done. */
+const RING_TICKS = 36;
+
+/**
+ * Aro do tablado: enche de luz até o round alvo (0..1), com as marcas acendendo uma a uma, e
+ * modos idle/waiting/done. As marcas são criadas aqui para o HTML ficar enxuto.
+ */
 export function ring(root) {
   const progress = root.querySelector('.ring-progress');
+  const ticks = root.querySelector('.ring-ticks');
+  const marks = [];
+  if (ticks && !ticks.childElementCount) {
+    for (let i = 0; i < RING_TICKS; i++) {
+      const a = (i / RING_TICKS) * Math.PI * 2 - Math.PI / 2;
+      const [r1, r2] = i % 3 === 0 ? [41.2, 44.8] : [42.2, 44];
+      const mark = svg('line', {
+        x1: (50 + r1 * Math.cos(a)).toFixed(2), y1: (50 + r1 * Math.sin(a)).toFixed(2),
+        x2: (50 + r2 * Math.cos(a)).toFixed(2), y2: (50 + r2 * Math.sin(a)).toFixed(2),
+      });
+      marks.push(mark);
+      ticks.append(mark);
+    }
+  }
+  let lit = -1;
   return {
     mode(m) {
       root.dataset.mode = m;
+      if (m === 'idle') this.progress(0);
     },
     progress(p) {
-      progress.style.setProperty('stroke-dashoffset', String(100 - Math.max(0, Math.min(1, p)) * 100));
+      const v = Math.max(0, Math.min(1, p));
+      progress.style.setProperty('stroke-dashoffset', String(100 - v * 100));
+      const n = Math.round(v * marks.length);
+      if (n === lit) return;
+      lit = n;
+      marks.forEach((mark, i) => mark.classList.toggle('is-lit', i < n));
     },
   };
 }
 
 // ---------- Diálogos e avisos ----------
 
-/** Liga botões [data-open] e [data-close] aos <dialog>; clique no fundo fecha. */
+const phoneSheet = () => globalThis.matchMedia?.('(max-width: 40rem)').matches ?? false;
+let openCount = 0;
+const openers = new WeakMap();
+
+/**
+ * Liga botões [data-open] e [data-close] aos <dialog>. Clique no fundo fecha (mas não um arraste
+ * que começou dentro da folha); no celular, as folhas fecham arrastando para baixo.
+ */
 export function setupDialogs() {
   document.addEventListener('click', (event) => {
     const opener = event.target.closest?.('[data-open]');
-    if (opener) openDialog($(opener.dataset.open));
+    if (opener) openDialog($(opener.dataset.open), opener);
     const closer = event.target.closest?.('[data-close]');
     if (closer) closeDialog(closer.closest('dialog'));
   });
   for (const dialog of document.querySelectorAll('dialog')) {
+    let downOnBackdrop = false;
+    dialog.addEventListener('pointerdown', (event) => {
+      downOnBackdrop = event.target === dialog;
+    });
     dialog.addEventListener('click', (event) => {
-      if (event.target === dialog) closeDialog(dialog);
+      if (event.target === dialog && downOnBackdrop) closeDialog(dialog);
     });
     dialog.addEventListener('cancel', (event) => {
       event.preventDefault();
       closeDialog(dialog);
     });
+    dialog.addEventListener('close', () => {
+      openCount = Math.max(0, openCount - 1);
+      document.documentElement.classList.toggle('has-dialog', openCount > 0);
+      const back = openers.get(dialog);
+      if (back?.isConnected) back.focus?.({ preventScroll: true });
+    });
+    if (dialog.classList.contains('sheet') || dialog.classList.contains('drawer')) dragToClose(dialog);
   }
 }
 
-export function openDialog(dialog) {
+/** Arrastar a alça (ou o cabeçalho) para baixo fecha a folha no celular. */
+function dragToClose(dialog) {
+  const grip = dialog.querySelector('.sheet-head');
+  if (!grip) return;
+  let start = null;
+  const move = (event) => {
+    if (!start) return;
+    const dy = Math.max(0, event.clientY - start.y);
+    dialog.style.setProperty('--drag', `${dy}px`);
+  };
+  const end = (event) => {
+    if (!start) return;
+    const dy = Math.max(0, event.clientY - start.y);
+    const speed = dy / Math.max(1, performance.now() - start.t);
+    start = null;
+    dialog.classList.remove('is-dragging');
+    if (dy > 110 || speed > 0.6) {
+      closeDialog(dialog, true);
+    } else {
+      dialog.style.setProperty('--drag', '0px');
+    }
+  };
+  grip.addEventListener('pointerdown', (event) => {
+    if (!phoneSheet() || dialog.classList.contains('drawer') || event.target.closest('button, a, input')) return;
+    start = { y: event.clientY, t: performance.now() };
+    dialog.classList.add('is-dragging');
+    grip.setPointerCapture?.(event.pointerId);
+  });
+  grip.addEventListener('pointermove', move);
+  grip.addEventListener('pointerup', end);
+  grip.addEventListener('pointercancel', end);
+}
+
+export function openDialog(dialog, opener = document.activeElement) {
   if (!dialog || dialog.open) return;
   dialog.classList.remove('is-closing');
+  dialog.style.setProperty('--drag', '0px');
+  if (opener instanceof HTMLElement) openers.set(dialog, opener);
   dialog.showModal();
+  openCount += 1;
+  document.documentElement.classList.add('has-dialog');
   dialog.dispatchEvent(new Event('opened'));
 }
 
-export function closeDialog(dialog) {
-  if (!dialog?.open) return;
+export function closeDialog(dialog, dragged = false) {
+  if (!dialog?.open || dialog.classList.contains('is-closing')) return;
   if (reducedMotion()) {
     dialog.close();
     return;
   }
   dialog.classList.add('is-closing');
+  if (dragged) dialog.classList.add('is-dropped');
   setTimeout(() => {
-    dialog.classList.remove('is-closing');
+    dialog.classList.remove('is-closing', 'is-dropped');
     dialog.close();
-  }, 220);
+  }, 240);
 }
 
 let toastTimer = null;
-export function toast(message) {
+/** Aviso curto embaixo da tela. kind: 'ok', 'warn' ou nada. */
+export function toast(message, kind = '') {
   let el = $('toast');
   if (!el) {
-    el = h('div', { id: 'toast', class: 'toast', role: 'status', 'aria-live': 'polite' });
+    el = h('div', { id: 'toast', class: 'toast', role: 'status', 'aria-live': 'polite' },
+      h('span', { class: 'toast-icon', 'aria-hidden': 'true' }), h('span', { class: 'toast-text' }));
     document.body.append(el);
   }
-  el.textContent = message;
+  el.dataset.kind = kind;
+  el.querySelector('.toast-text').textContent = message;
+  el.classList.remove('is-visible');
+  void el.offsetWidth;
   el.classList.add('is-visible');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('is-visible'), 2200);
+  toastTimer = setTimeout(() => el.classList.remove('is-visible'), 2600);
 }
 
 export async function copyText(text, message = 'Copiado!') {
   try {
     await navigator.clipboard.writeText(text);
-    toast(message);
+    toast(message, 'ok');
   } catch {
-    toast('Não deu para copiar. Selecione e copie à mão.');
+    toast('Não deu para copiar. Selecione e copie à mão.', 'warn');
   }
 }
 
@@ -491,22 +307,51 @@ export async function runVerificationBadge(badge, dialog, rollId, verifyRoll) {
 
 // ---------- Resultado ----------
 
-/** Faíscas, banner de crítico e tremor de falha crítica. */
-export function celebrate(stage, banner, crit) {
+/**
+ * Momento do resultado: clarão no tablado e centelhas nos dados; no crítico, coluna de luz dourada
+ * e faixa; na falha crítica, tremulação vermelha e dois tremores curtos. Tudo some em ~1 s.
+ */
+export function celebrate(stage, banner, crit, tray) {
   banner.hidden = true;
-  if (crit === 'crit') {
-    burst(stage, { count: 46, colors: ['#ffc23d', '#fff3c4', '#ffffff'], spread: 220 });
-  } else if (crit === 'fumble') {
+  stage.classList.remove('is-crit', 'is-fumble');
+  replay(stage, 'is-landed');
+  tray?.flare(crit);
+  if (!crit) return;
+  stage.classList.add(crit === 'crit' ? 'is-crit' : 'is-fumble');
+  if (crit === 'fumble') {
     stage.classList.add('is-shaking');
-    setTimeout(() => stage.classList.remove('is-shaking'), 600);
-  } else {
-    burst(stage);
-    return;
+    setTimeout(() => stage.classList.remove('is-shaking'), 520);
   }
   banner.textContent = crit === 'crit' ? 'Crítico!' : 'Falha crítica';
   banner.dataset.kind = crit;
   banner.hidden = false;
   replay(banner, 'is-in');
+}
+
+/**
+ * Fichas dos dados sob o total (máximo em ouro, 1 em vermelho) e o bônus. `text` é a mesma conta
+ * por extenso, para leitor de tela. Um dado só sem bônus não tem fichas: o total já diz tudo.
+ */
+export function diceChips(el, { dice, modifier = 0, sides, text }) {
+  if (!text) {
+    el.replaceChildren();
+    el.removeAttribute('aria-label');
+    return;
+  }
+  const max = sides === 100 ? 100 : sides;
+  const chips = dice.map((d, i) => {
+    const chip = h('span', { class: `die-chip${d === max ? ' is-max' : d === 1 ? ' is-min' : ''}`, 'aria-hidden': 'true', text: String(d) });
+    chip.style.setProperty('--i', String(Math.min(i, 12)));
+    return chip;
+  });
+  const mod = modifier ? [h('span', { class: 'mod-chip', 'aria-hidden': 'true', text: `${modifier > 0 ? '+' : '−'} ${Math.abs(modifier)}` })] : [];
+  el.replaceChildren(...chips, ...mod, h('span', { class: 'visually-hidden', text }));
+}
+
+/** Tira o brilho do resultado anterior do tablado. */
+export function calmStage(stage, banner) {
+  stage.classList.remove('is-crit', 'is-fumble', 'is-landed');
+  banner.hidden = true;
 }
 
 /** Reinicia uma animação de entrada baseada em classe. */

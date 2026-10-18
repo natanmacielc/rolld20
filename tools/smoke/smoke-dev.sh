@@ -51,13 +51,13 @@ done
 [ "$status" = RESOLVED ] || { echo "roll não resolveu: $status"; exit 1; }
 
 echo "== prova verificada pelo verificador Python independente"
-curl -fsS "$BASE/api/rolls/$roll/proof" | (cd "$ROOT/tools/verify-py" && python3 -m dice_verify.proof -)
+curl -fsS "$BASE/api/rolls/$roll/proof" | (cd "$ROOT/tools/verify-py" && python3 -m rolld20_verify.proof -)
 linked_roll="$(json "['rollId']" <<<"$linked_receipt")"
 for _ in $(seq 1 15); do
   [ "$(curl -fsS "$BASE/api/rolls/$linked_roll" | json "['status']")" = RESOLVED ] && break
   sleep 2
 done
-curl -fsS "$BASE/api/rolls/$linked_roll/proof" | (cd "$ROOT/tools/verify-py" && python3 -m dice_verify.proof -)
+curl -fsS "$BASE/api/rolls/$linked_roll/proof" | (cd "$ROOT/tools/verify-py" && python3 -m rolld20_verify.proof -)
 
 echo "== página /r e imagem OG"
 page="$(curl -fsS "$BASE/r/$roll")"

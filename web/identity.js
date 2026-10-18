@@ -6,10 +6,12 @@ import { fingerprint, linkMessage, MAX_LINKS, nameProblem, playerMessage } from 
 
 export { nameProblem };
 
-const DB_NAME = 'dice-identity';
+const DB_NAME = 'rolld20-identity';
+/** Banco de antes do projeto virar RollD20: a chave de lá é trazida para o novo uma vez (legacyRecord). */
+const LEGACY_DB_NAME = 'dice-identity';
 const STORE = 'keys';
 const KEY_ID = 'player';
-const NAME_KEY = 'dice.playerName';
+const NAME_KEY = 'rolld20.playerName';
 export const TABLES_CONTEXT = 'dice-tables-v1';
 export const UNSUPPORTED = 'Este navegador não assina com Ed25519, que identifica quem rolou. Atualize o navegador para rolar.';
 
@@ -22,9 +24,13 @@ function done(request) {
   });
 }
 
-async function withStore(mode, fn) {
-  const open = globalThis.indexedDB.open(DB_NAME, 1);
-  open.onupgradeneeded = () => open.result.createObjectStore(STORE);
+/** Abre o banco; com create false, um banco que não existe não é criado (a abertura falha). */
+async function withStore(mode, fn, name = DB_NAME, create = true) {
+  const open = globalThis.indexedDB.open(name, 1);
+  open.onupgradeneeded = () => {
+    if (create) open.result.createObjectStore(STORE);
+    else open.transaction.abort();
+  };
   const db = await done(open);
   try {
     return await done(fn(db.transaction(STORE, mode).objectStore(STORE)));
@@ -56,7 +62,22 @@ async function describe(stored, persistent) {
   };
 }
 
-/** Lê a chave do IndexedDB ou cria uma. Sem IndexedDB (ex.: Node, modo restrito), a chave vale só nesta aba. */
+/**
+ * Chave do aparelho guardada no banco antigo, ou null. A CryptoKey (não exportável) passa para o banco
+ * novo por clone estruturado, que vale dentro da mesma origem: o jogador continua com a mesma identidade.
+ */
+async function legacyRecord() {
+  try {
+    return (await withStore('readonly', (s) => s.get(KEY_ID), LEGACY_DB_NAME, false)) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Lê a chave do IndexedDB ou cria uma (antes, procura no banco antigo). Sem IndexedDB (ex.: Node, modo
+ * restrito), a chave vale só nesta aba.
+ */
 async function load() {
   let stored = null;
   let persistent = true;
@@ -66,10 +87,12 @@ async function load() {
     persistent = false;
   }
   if (!stored) {
-    stored = await generate();
+    const legacy = persistent ? await legacyRecord() : null;
+    stored = legacy ?? await generate();
     if (persistent) {
       try {
         await withStore('readwrite', (s) => s.add(stored, KEY_ID));
+        if (legacy) globalThis.indexedDB.deleteDatabase(LEGACY_DB_NAME);
       } catch {
         // Outra aba gravou primeiro: vale a dela, para o aparelho ter uma chave só.
         stored = await withStore('readonly', (s) => s.get(KEY_ID)).catch(() => null) ?? stored;

@@ -1,6 +1,6 @@
 # Algoritmo dice-v1 (cadeias chain-v1 e chain-v2)
 
-Esta é a fonte da verdade. Os verificadores Java (`dice-core`), JavaScript (`web/verifier/dice-v1.js`) e Python (`tools/verify-py`) implementam exatamente o que está aqui, e todos passam em `spec/test-vectors.json`.
+Esta é a fonte da verdade. Os verificadores Java (`rolld20-core`), JavaScript (`web/verifier/dice-v1.js`) e Python (`tools/verify-py`) implementam exatamente o que está aqui, e todos passam em `spec/test-vectors.json`.
 
 Mudou qualquer coisa que altere um resultado ou uma validação? Então nasce a `dice-v2`, com spec, vetores e os três verificadores atualizados no mesmo PR. A v1 não muda em silêncio.
 

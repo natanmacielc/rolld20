@@ -1,6 +1,6 @@
-# Roll Dice
+# RollD20
 
-[![CI](https://github.com/natanmacielc/dice/actions/workflows/ci.yml/badge.svg)](https://github.com/natanmacielc/dice/actions/workflows/ci.yml)
+[![CI](https://github.com/natanmacielc/rolld20/actions/workflows/ci.yml/badge.svg)](https://github.com/natanmacielc/rolld20/actions/workflows/ci.yml)
 [![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue.svg)](LICENSE)
 
 **Dados de RPG com imparcialidade comprovável.** Cada rolagem vem de uma aleatoriedade pública que ainda não existia quando o pedido foi feito. Ninguém (nem os jogadores, nem o mestre, nem o servidor) consegue prever ou escolher o resultado, e qualquer pessoa pode recalcular e conferir.
@@ -23,7 +23,7 @@ Toda rolagem tem uma página em `/r/{rollId}` e uma prova para baixar. Três imp
 
 | Verificador | Onde |
 |---|---|
-| Java | [`dice-core/`](dice-core) (só o JDK, sem dependências) |
+| Java | [`rolld20-core/`](rolld20-core) (só o JDK, sem dependências) |
 | JavaScript (roda no seu navegador) | [`web/verifier/`](web/verifier) |
 | Python (linha de comando) | [`tools/verify-py/`](tools/verify-py) |
 
@@ -32,14 +32,14 @@ Para conferir uma prova com o verificador Python:
 ```sh
 curl -s https://dice.nimbos.solutions/api/rolls/<rollId>/proof > prova.json
 cd tools/verify-py && python3 -m pip install cryptography==50.0.2
-python3 -m dice_verify.proof ../../prova.json
+python3 -m rolld20_verify.proof ../../prova.json
 # {"valid": true, "rollId": "...", "dice": [4, 2], "total": 9, ...}
 ```
 
 Ou recalcule uma rolagem a partir das entradas:
 
 ```sh
-python3 -m dice_verify --randomness <hex> --seed "<clientSeed>" --nonce 1 --expr 2d6+3
+python3 -m rolld20_verify --randomness <hex> --seed "<clientSeed>" --nonce 1 --expr 2d6+3
 ```
 
 O log inteiro da mesa é público em `GET /api/sessions/{sessionId}/log`.
@@ -59,8 +59,8 @@ Monólito modular em Java 21 (Maven multi-módulo, um único artefato implantáv
 | Módulo | O que é |
 |---|---|
 | [`spec/`](spec) | Especificação do algoritmo e vetores de teste: a fonte da verdade |
-| [`dice-core/`](dice-core) | Java puro (só o JDK): rolagem, parser de expressão e verificador |
-| [`dice-app/`](dice-app) | Quarkus: API REST, DynamoDB, S3, imagens OG e cliente do drand |
+| [`rolld20-core/`](rolld20-core) | Java puro (só o JDK): rolagem, parser de expressão e verificador |
+| [`rolld20-app/`](rolld20-app) | Quarkus: API REST, DynamoDB, S3, imagens OG e cliente do drand |
 | [`web/`](web) | Site estático e verificador em JS (CSP rígido, sem framework) |
 | [`tools/verify-py/`](tools/verify-py) | Verificador independente em Python |
 | [`infra/`](infra) | AWS CDK em Java |
@@ -72,7 +72,7 @@ Na AWS: CloudFront (plano flat-rate **Free**, com WAF) → Lambda (Quarkus com S
 1. Usar sempre o randomness do round **alvo**, nunca o do latest.
 2. A cadeia nunca bifurca: escrita atômica condicionada ao número de sequência.
 3. Mudar o algoritmo exige versão nova (v2), com spec, vetores e os três verificadores atualizados juntos.
-4. O `dice-core` não depende de nada além do JDK.
+4. O `rolld20-core` não depende de nada além do JDK.
 5. Nada de criptografia caseira.
 6. O randomness do drand tem de ser igual a `SHA-256(signature)`.
 7. O log público inclui pedidos pendentes e expirados.
@@ -83,13 +83,13 @@ Precisa de JDK 21, Docker (DynamoDB Local via Testcontainers), Node 22 e Python 
 
 ```sh
 ./mvnw -q verify                                   # build e testes Java
-./mvnw -q -pl dice-core test                       # só o núcleo
+./mvnw -q -pl rolld20-core test                       # só o núcleo
 node --test "web/**/*.test.mjs"                    # verificador JS e lógica da web
 python3 -m pytest tools/verify-py                  # verificador Python (precisa de pytest e cryptography)
 ./mvnw -f infra/pom.xml verify                     # testes do template do CDK
 ```
 
-Para rodar o app localmente: `./mvnw -pl dice-app quarkus:dev` com DynamoDB Local e s3mock (os endpoints estão no [`CLAUDE.md`](CLAUDE.md)). Deploy só pelo GitHub Actions.
+Para rodar o app localmente: `./mvnw -pl rolld20-app quarkus:dev` com DynamoDB Local e s3mock (os endpoints estão no [`CLAUDE.md`](CLAUDE.md)). Deploy só pelo GitHub Actions.
 
 ## Licença
 

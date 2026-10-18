@@ -24,14 +24,15 @@ import javax.imageio.ImageIO;
  * (viewBox 64x64); mudou um, mude o outro. Saída reprodutível: rodar duas vezes dá os mesmos bytes.
  *
  * Uso: java tools/icons/GenerateIcons.java web
- * Grava favicon.ico (PNGs de 16, 32 e 48), apple-touch-icon.png (180, fundo opaco) e icon-512.png.
+ * Grava favicon.ico (PNGs de 16, 32 e 48), apple-touch-icon.png (180, fundo opaco), icon-192.png e icon-512.png
+ * (manifest) e icon-maskable-512.png (o dado menor, dentro da zona segura de 80% das máscaras do Android).
  */
 public class GenerateIcons {
 
     static final Color MAGENTA = new Color(0xFF3D9A);
     static final Color VIOLET = new Color(0xA86BFF);
     static final Color BG = new Color(0x0A0616);
-    static final Path FONT = Path.of("dice-app/src/main/resources/fonts/Inter-Bold.ttf");
+    static final Path FONT = Path.of("rolld20-app/src/main/resources/fonts/Inter-Bold.ttf");
 
     // Vértices no viewBox 64x64: hexágono externo e o triângulo da face central.
     static final double[] T = {32, 3}, UR = {57.1, 17.5}, LR = {57.1, 46.5}, B = {32, 61}, LL = {6.9, 46.5},
@@ -53,8 +54,10 @@ public class GenerateIcons {
         }
         byte[][] ico = {png(die(16, null)), png(die(32, null)), png(die(48, bold))};
         Files.write(out.resolve("favicon.ico"), ico(new int[] {16, 32, 48}, ico));
-        Files.write(out.resolve("apple-touch-icon.png"), png(tile(180, bold)));
-        Files.write(out.resolve("icon-512.png"), png(tile(512, bold)));
+        Files.write(out.resolve("apple-touch-icon.png"), png(tile(180, bold, .72)));
+        Files.write(out.resolve("icon-192.png"), png(tile(192, bold, .72)));
+        Files.write(out.resolve("icon-512.png"), png(tile(512, bold, .72)));
+        Files.write(out.resolve("icon-maskable-512.png"), png(tile(512, bold, .54)));
     }
 
     /** O dado sozinho, fundo transparente. O "20" só aparece quando cabe (fonte != null). */
@@ -67,8 +70,8 @@ public class GenerateIcons {
         return img;
     }
 
-    /** Ícone de app: fundo escuro com brilho na cor da marca e o dado a 72%. */
-    static BufferedImage tile(int size, Font font) {
+    /** Ícone de app: fundo escuro com brilho na cor da marca e o dado ocupando `fraction` do lado. */
+    static BufferedImage tile(int size, Font font, double fraction) {
         BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = img.createGraphics();
         hints(g);
@@ -77,7 +80,7 @@ public class GenerateIcons {
         g.setPaint(new RadialGradientPaint(size / 2f, size / 2f, size * .55f, new float[] {0f, 1f},
                 new Color[] {new Color(0xA8, 0x6B, 0xFF, 110), new Color(0xA8, 0x6B, 0xFF, 0)}));
         g.fillRect(0, 0, size, size);
-        double scale = size * .72 / 64.0;
+        double scale = size * fraction / 64.0;
         double offset = (size - 64 * scale) / 2;
         drawDie(g, scale, offset, offset, font);
         g.dispose();

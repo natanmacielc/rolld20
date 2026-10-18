@@ -17,3 +17,18 @@ SOURCE_DATE_EPOCH=0 pyftsubset inst.ttf \
   --unicodes="U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2190-2199,U+2212,U+2215,U+2713,U+2717" \
   --layout-features='*' --flavor=woff2 --output-file=bricolage-grotesque.woff2
 ```
+
+## cinzel.woff2
+
+- Origem: [Cinzel](https://github.com/NDISCOVER/Cinzel), via [google/fonts](https://github.com/google/fonts/tree/6ce172f74aa355ea43eb964fa4a91570a4d3064d/ofl/cinzel), commit `6ce172f74aa355ea43eb964fa4a91570a4d3064d`. Licença SIL OFL 1.1 (`OFL-Cinzel.txt`).
+- TTF de origem: `Cinzel[wght].ttf`, SHA-256 `f4d83d34d1f6c741193e4acf4b3dff9531e5a67b6aa65228d00a7db72a4e0f34`.
+- Recorte: eixo de peso inteiro (400 a 900), só Latin. Usada nos títulos, na marca, no total e nos números dos dados (canvas).
+- SHA-256 do woff2: `020abbd963c45d02fb10292f7ac6a508b11528a1cc20fae4222f6c7ddf7849de`.
+
+Reproduzir (fonttools 4.60.1 e brotli 1.1.0):
+
+```bash
+SOURCE_DATE_EPOCH=0 pyftsubset 'Cinzel[wght].ttf' \
+  --unicodes="U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2190-2199,U+2212,U+2215,U+2713,U+2717" \
+  --layout-features='*' --flavor=woff2 --output-file=cinzel.woff2
+```

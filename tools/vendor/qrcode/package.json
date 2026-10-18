@@ -1,5 +1,5 @@
 {
-  "name": "dice-vendor-qrcode",
+  "name": "rolld20-vendor-qrcode",
   "private": true,
   "description": "Gera web/vendor/qrcode-generator-2.0.4.mjs. Ver build.sh.",
   "type": "module",

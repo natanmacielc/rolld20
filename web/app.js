@@ -2,20 +2,21 @@
 import { fetchLog, getJson, myTables, postJson, verifyRoll, verifyTable } from './api.js';
 import {
   buildExpression, criticalOf, formatBreakdown, formatModifier, generateSeed, historyFromLog, historyLoadError, initialOf,
-  mergeTables, playerColor, relativeTime, requestRoll, tableLabel, tablesCacheFresh, tablesPage, upsertTable,
+  mergeTables, migrateKeys, playerColor, relativeTime, requestRoll, tableLabel, tablesCacheFresh, tablesPage, upsertTable,
 } from './page-logic.js';
 import { parseExpression } from './verifier/dice-v1.js';
 import { fingerprint } from './verifier/chain-v2.js';
 import { adoptIdentity, identity, linkDevice, nameProblem, saveName, signRequest, storedName } from './identity.js';
 import { acceptIdentity, answerDevice, deviceMac, newSecret, pairingUrl, parsePairingFragment } from './pairing.js';
 import {
-  $, DIE_COLORS, DIE_SIDES, Tray, celebrate, closeDialog, copyText, countUp, dieIcon, h, lineIcon, openDialog, qrSvg,
-  replay, ring,
+  $, DIE_COLORS, DIE_SIDES, Tray, calmStage, celebrate, closeDialog, copyText, countUp, diceChips, dieIcon, h, lineIcon,
+  openDialog, qrSvg, replay, ring,
   runTableCheck, runVerificationBadge, setupDialogs, shareLink, sleep, toast,
 } from './ui.js';
+import { setupShell } from './shell.js';
 
-const SESSION_KEY = 'dice.sessionId';
-const SESSION_NAME_KEY = 'dice.sessionName';
+const SESSION_KEY = 'rolld20.sessionId';
+const SESSION_NAME_KEY = 'rolld20.sessionName';
 const ID_FORMAT = /^[0-9a-hjkmnp-tv-z]{16}$/;
 const POLL_MS = 1000;
 const GIVE_UP_MS = 90_000;
@@ -24,6 +25,9 @@ const RECREATED = {
   missing: 'A mesa salva neste navegador não existia mais. Criei uma nova.',
   'read-only': 'A mesa salva era antiga, sem identificação de quem rola. Criei uma nova; convide a turma de novo.',
 };
+
+// Chaves salvas antes do projeto virar RollD20: passam para os nomes novos antes de qualquer leitura.
+migrateKeys(() => globalThis.localStorage);
 
 const state = { sides: 20, count: 1, modifier: 0, rolling: false, seedCustom: false, rollId: null };
 const tray = new Tray($('tray'), state.sides, state.count);
@@ -173,7 +177,7 @@ async function adoptInvite() {
 
 // A lista fica em cache (memória e localStorage) e só volta ao servidor quando passa do prazo ou no
 // botão de atualizar: o que muda neste aparelho (criar, entrar, rolar, tirar) já atualiza o cache.
-const TABLES_KEY = 'dice.tables';
+const TABLES_KEY = 'rolld20.tables';
 const TABLES_TTL_MS = 10 * 60_000;
 const TABLES_PER_PAGE = 6;
 
@@ -466,6 +470,7 @@ function expression() {
 
 function renderChoice() {
   document.documentElement.style.setProperty('--c', DIE_COLORS[state.sides]);
+  $('picker').style.setProperty('--pick', String(DIE_SIDES.indexOf(state.sides)));
   for (const button of $('picker').children) {
     const on = Number(button.dataset.sides) === state.sides;
     button.setAttribute('aria-checked', String(on));
@@ -483,7 +488,7 @@ function renderChoice() {
 function resetStage() {
   if (state.rolling) return;
   $('result').hidden = true;
-  $('banner').hidden = true;
+  calmStage($('stage'), $('banner'));
   $('roll-error').textContent = '';
   $('status-line').textContent = 'Escolha o dado e role';
   stageRing.mode('idle');
@@ -625,11 +630,11 @@ async function reveal(roll) {
   $('status-line').textContent = 'O drand falou!';
   await tray.land(dice);
 
-  celebrate($('stage'), $('banner'), criticalOf(roll.expression, dice));
+  celebrate($('stage'), $('banner'), criticalOf(roll.expression, dice), tray);
   $('result').hidden = false;
   replay($('result'), 'is-in');
   countUp($('total'), total, Math.min(900, 300 + total * 8));
-  $('breakdown').textContent = formatBreakdown(dice, modifier);
+  diceChips($('breakdown'), { dice, modifier, sides: parseExpression(roll.expression).sides, text: formatBreakdown(dice, modifier) });
   $('status-line').textContent = `${roll.expression} · round #${round} do drand`;
   state.rollId = roll.rollId;
   runVerificationBadge($('verify-badge'), $('verify-dialog'), roll.rollId, verifyRoll);
@@ -642,6 +647,10 @@ async function roll() {
     expr = expression();
   } catch (e) {
     $('roll-error').textContent = e.message;
+    return;
+  }
+  if (navigator.onLine === false) {
+    $('roll-error').textContent = 'Sem conexão: o pedido precisa chegar ao servidor antes do drand sortear.';
     return;
   }
   if (!playerName) {
@@ -821,6 +830,7 @@ $('verify-table').addEventListener('click', async () => {
 // ---------- Início ----------
 
 setupDialogs();
+setupShell();
 renderPlayer();
 joinFromLink();
 newSeed();

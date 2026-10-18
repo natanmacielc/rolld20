@@ -6,15 +6,15 @@
 
     <!-- Fora do reactor (o build normal não baixa o aws-cdk-lib). Build: ./mvnw -f infra/pom.xml verify -->
     <parent>
-        <groupId>io.github.natanmacielc.dice</groupId>
-        <artifactId>dice-parent</artifactId>
+        <groupId>io.github.natanmacielc.rolld20</groupId>
+        <artifactId>rolld20-parent</artifactId>
         <version>0.1.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>dice-infra</artifactId>
-    <name>dice-infra</name>
-    <description>AWS CDK do Roll Dice. Deploy só pelo GitHub Actions.</description>
+    <artifactId>rolld20-infra</artifactId>
+    <name>rolld20-infra</name>
+    <description>AWS CDK do RollD20. Deploy só pelo GitHub Actions.</description>
 
     <properties>
         <aws-cdk-lib.version>2.271.0</aws-cdk-lib.version>
@@ -58,7 +58,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>${exec-maven-plugin.version}</version>
                 <configuration>
-                    <mainClass>io.github.natanmacielc.dice.infra.DiceApp</mainClass>
+                    <mainClass>io.github.natanmacielc.rolld20.infra.RollD20App</mainClass>
                 </configuration>
             </plugin>
         </plugins>
